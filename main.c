@@ -4,10 +4,9 @@
 #include "neslib.h"
 
 
-
 //variables
 
-//static unsigned char i;
+static unsigned char i;
 static unsigned char pad,spr;
 //static unsigned char touch;
 static unsigned char frame;
@@ -17,10 +16,12 @@ static unsigned char ball_stuck = 1;
 static unsigned char bar_x;
 static unsigned char bar_y = 200;
 //ball position & velocity
-static unsigned char ball_x;
-static unsigned char ball_y;
-static char ball_vel_x;
-static char ball_vel_y;
+static int ball_x;
+static int ball_y;
+static int ball_vel_x;
+static int ball_vel_y;
+
+static unsigned char friction = 10;
 
 //Bar metasprite
 //x, y, sprite, palette
@@ -41,7 +42,17 @@ const unsigned char palSprites[16]={
 	0x0f,0x19,0x29,0x39
 };
 
-
+unsigned char ball_collide_bar_y()
+{
+	for(i = ball_y/10; i < (ball_y+ball_vel_y)/10; i++)
+	{
+		if(i >= 193 && i < 200)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
 
 void main(void)
 {
@@ -52,8 +63,8 @@ void main(void)
 	//set initial coords
 	
 	bar_x=114;
-	ball_x = bar_x + 12;
-	ball_y = 193;
+	ball_x = 1260;
+	ball_y = 1930;
 	ball_vel_x = 0;
 	ball_vel_y = 0;
 	//init other vars
@@ -66,72 +77,108 @@ void main(void)
 	while(1)
 	{
 		ppu_wait_frame();//wait for next TV frame
-
-		//flashing color for touch
-		
-		//i=frame&1?0x30:0x2a;
-
-		//pal_col(17,touch?i:0x21);//set first sprite color
-		//pal_col(21,touch?i:0x26);//set second sprite color
-
-		//process players
 		
 		spr=0;
 
-		///for(i=0;i<1;++i)
-		//{
-			//display metasprite
+		//display metasprite
 			
-			//bar
-			spr=oam_meta_spr(bar_x,bar_y,spr,metaBar);
-			//ball
-			spr=oam_spr(ball_x,ball_y,0x40,3,spr);
+		//bar
+		spr=oam_meta_spr(bar_x,bar_y,spr,metaBar);
+		//ball
+		spr=oam_spr((unsigned char)(ball_x/10), (unsigned char)(ball_y/10),0x40,3,spr);
 
-			//poll pad and change coordinates
+		//poll pad and change coordinates
 			
-			pad=pad_poll(0);
+		pad=pad_poll(0);
 
-			if(pad&PAD_LEFT &&bar_x>=  3) 
-			{
-				bar_x-=3;
-				if(ball_stuck)
-				{
-					ball_x-=3;
-				}
-			}
-			if(pad&PAD_RIGHT&&bar_x<=222) 
-			{
-				bar_x+=3;
-				if(ball_stuck)
-				{
-					ball_x+=3;
-				}
-			}
+		if(pad&PAD_LEFT &&bar_x>= 4) 
+		{
+			bar_x-=4;
 			if(ball_stuck)
 			{
-				if(pad&PAD_UP)
+				ball_x-=40;
+			}
+		}
+		if(pad&PAD_RIGHT&&bar_x<=222) 
+		{
+			bar_x+=4;
+			if(ball_stuck)
+			{
+				ball_x+=40;
+			}
+		}
+		if(ball_stuck)
+		{
+			if(pad&PAD_UP)
+			{
+				ball_stuck = 0;
+				if(pad&PAD_LEFT)
 				{
-					ball_stuck = 0;
-					ball_vel_y = -1;
+					ball_vel_y = -6;
+					ball_vel_x = -6;
+				}
+				else if(pad&PAD_RIGHT)
+				{
+					ball_vel_y = -6;
+					ball_vel_x = 6;
+				}
+				else
+				{
+					ball_vel_y = -9;
+					ball_y -= 10;
 				}
 			}
-			else
+		}
+		else
+		{	
+			//window collision
+			if(ball_y + ball_vel_y < 80)
 			{
-				//TODO check collision
-				ball_x += ball_vel_x;
-				ball_y += ball_vel_y;
+				ball_y = 80;
+				ball_vel_y *= -1;
 			}
-			//if(pad&PAD_DOWN &&cat_y[i]<212) cat_y[i]+=1;
-		//}
+			if(ball_x + ball_vel_x < 0)
+			{
+				ball_x = 0;
+				ball_vel_x *= -1;
+			}
+			if(ball_x + ball_vel_x > 2480)
+			{
+				ball_x = 2480;
+				ball_vel_x *= -1;
+			}
+			//bar collision
+			if(ball_x/10 >= bar_x && ball_x/10 <= bar_x+24)
+			{
+				if(ball_collide_bar_y())
+				{
+					ball_vel_y *= -1;
+					ball_y = 1930;
 
-		//check for collision for a smaller bounding box
-		//metasprite is 24x24, collision box is 20x20
-		
-		/*if(!(cat_x[0]+22< cat_x[1]+2 ||
-		     cat_x[0]+ 2>=cat_x[1]+22||
-	         cat_y[0]+22< cat_y[1]+2 ||
-		     cat_y[0]+ 2>=cat_y[1]+22)) touch=1; else touch=0;*/
+					//Friction
+					if(pad&PAD_LEFT)
+					{
+						//ball_vel_y += ball_vel_x < 0 ? -friction : friction;
+						ball_vel_x -= friction;
+					}
+					else if(pad&PAD_RIGHT)
+					{
+						//ball_vel_y += ball_vel_x > 0 ? -friction : friction;
+						ball_vel_x += friction;
+					}
+					/*else
+					{
+						ball_vel_y -= friction/2;
+						ball_vel_x += (ball_vel_x < 0 ? -friction/2 : friction/2);
+					}*/
+				}
+			}
 
+			//TODO check brick collision
+
+			ball_x += ball_vel_x;
+			ball_y += ball_vel_y;
+		}
 		frame++;
 	}
 }
