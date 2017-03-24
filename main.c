@@ -117,7 +117,7 @@ void main(void)
 		//Move ball
 		if(ball_stuck)
 		{
-			if(pad&PAD_UP)
+			if(pad&PAD_A)
 			{
 				ball_stuck = 0;
 				if(pad&PAD_LEFT)
