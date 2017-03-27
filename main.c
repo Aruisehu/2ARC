@@ -1,31 +1,22 @@
-//this example shows metasprite use, two pads polling,
-//and simple collision detection that changes palette
-
 #include "neslib.h"
-
-
-//variables
 
 static unsigned char i, j;
 static unsigned char pad,spr;
-static unsigned char ball_stuck = 1;
 
 //bar position
 static unsigned char bar_x;
 static unsigned char bar_y = 200;
 //ball position & velocity
+static unsigned char ball_stuck = 1;
 static int ball_x;
 static int ball_y;
 static int velocity;
 static int angle;
 static int velx, vely;
-
 //next ball position, used for the collision with the bar
 static int nbx, nby;
 //position of the ball on the bar (x)
 static int barBallPos;
-
-static unsigned char friction = 5;
 
 //Bar metasprite
 //x, y, sprite, palette
@@ -38,7 +29,6 @@ const unsigned char metaBar[]={
 };
 
 //Color palette
-
 const unsigned char palSprites[16]={
 	0x0f,0x17,0x27,0x37,
 	0x0f,0x11,0x21,0x31,
@@ -46,73 +36,81 @@ const unsigned char palSprites[16]={
 	0x0f,0x19,0x29,0x39
 };
 
-int aproxcos(int a) //(return * 1000)
+int aproxcos(int a) //(return val * 200)
 {
 	switch((a/10)%36)
 	{
 		case 0:
 		case 18:
-			return 1000;
+			return 200;
 		case 9:
 		case 27:
 			return 0;
 		case 1:
 		case 35:
-			return 984;
+			return 197;
 		case 17:
 		case 19:
-			return -984;
+			return -197;
 		case 2:
 		case 34:
-			return 939;
+			return 188;
 		case 16:
 		case 20:
-			return -939;
+			return -188;
 		case 3:
 		case 33:
-			return 866;
+			return 173;
 		case 15:
 		case 21:
-			return -866;
+			return -173;
 		case 4:
 		case 32:
-			return 766;
+			return 153;
 		case 14:
 		case 22:
-			return -766;
+			return -153;
 		case 5:
 		case 31:
-			return 642;
+			return 128;
 		case 13:
 		case 23:
-			return -642;
+			return -128;
 		case 6:
 		case 30:
-			return 500;
+			return 100;
 		case 12:
 		case 24:
-			return -500;
+			return -100;
 		case 7:
 		case 29:
-			return 342;
+			return 68;
 		case 11:
 		case 25:
-			return -342;
+			return -68;
 		case 8:
 		case 28:
-			return 173;
+			return 35;
 		case 10:
 		case 26:
-			return 173;
+			return 35;
 		default:
 			return 0;
 	}
 	return 0;
 }
 
-int aproxsin(int a) //(return * 1000)
+int aproxsin(int a) //(return val * 200)
 {
-	return -aproxcos(a + 90);
+	switch(((a/10)+9)%36)
+	{
+		case 0:
+			return -200;
+		case 18:
+			return 200;
+		default:
+			return -aproxcos(a + 90);
+	}
 }
 
 int abs(int val)
@@ -138,30 +136,29 @@ void main(void)
 		spr=0;
 
 		//display metasprite
-			
 		//bar
 		spr=oam_meta_spr(bar_x,bar_y,spr,metaBar);
 		//ball
 		spr=oam_spr((unsigned char)(ball_x/10), (unsigned char)(ball_y/10),0x40,3,spr);
 
-		//poll pad and change coordinates
+		//poll pad
 		pad=pad_poll(0);
 
 		//Move bar
 		if(pad&PAD_LEFT &&bar_x>= 1) 
 		{
-			bar_x-=1;
+			bar_x-=3;
 			if(ball_stuck)
 			{
-				ball_x-=10;
+				ball_x-=30;
 			}
 		}
 		if(pad&PAD_RIGHT&&bar_x<=222) 
 		{
-			bar_x+=1;
+			bar_x+=3;
 			if(ball_stuck)
 			{
-				ball_x+=10;
+				ball_x+=30;
 			}
 		}
 
@@ -171,7 +168,7 @@ void main(void)
 			if(pad&PAD_A)
 			{
 				ball_stuck = 0;
-				velocity = 8;
+				velocity = 10;//max 50
 				if(pad&PAD_LEFT)
 				{
 					angle = 230;
@@ -189,12 +186,12 @@ void main(void)
 		else
 		{	
 			//window collision
-			if(ball_y  < 80)//Top
+			if(ball_y < 80)//Top
 			{
-				ball_y = 80;//DEBUG (/20)
+				ball_y = 80;
 				angle = 360 - angle;
 			}
-			if(ball_y  > 2300)//bottom
+			else if(ball_y > 2300)//Bottom
 			{
 				ball_y = 2300;
 				angle = 360 - angle;
@@ -205,7 +202,7 @@ void main(void)
 				ball_x = 0;
 				angle = 360 + 180 - angle;
 			}
-			if(ball_x > 2480)//Right
+			else if(ball_x > 2480)//Right
 			{
 				ball_x = 2480;
 				angle = 360 + 180 - angle;
@@ -216,30 +213,33 @@ void main(void)
 			//Check collision only when the ball is going down (for the bar)
 			if(angle < 180)
 			{
-				velx = (aproxcos(angle)*velocity)/1000;
-				vely = (aproxsin(angle)*velocity)/1000;
-				j = abs(vely);
-				for(i = 0; i <= MAX(j/20, 1); ++i)
+				vely = (aproxsin(angle)*velocity)/200;
+				if(ball_y + vely*10 > 2000)
 				{
-					nbx = ball_x + (velx/j)*i;
-					nby = ball_y + i;
-
-					//check with the top of the bar
-					barBallPos = nbx-bar_x*10;
-					if(barBallPos+80 > 0 && barBallPos < 320)//Check for x (+80 for the width of the ball)
+					velx = (aproxcos(angle)*velocity)/200;
+					j = abs(vely);
+					for(i = 0; i <= MAX(j/20, 1); ++i)
 					{
-						if(nby+80 >= 2010 && nby+80 < 2050)//Check for y with 4px error
+						nbx = ball_x + (velx/j)*i;
+						nby = ball_y + i;
+
+						//check with the top of the bar
+						barBallPos = nbx-bar_x*10;
+						if(barBallPos+80 > 0 && barBallPos < 320)//Check for x (+80 for the width of the ball)
 						{
-							angle = 360 - angle;
-							ball_y = 1920;
-							//Friction
-							if(barBallPos < 160)
+							if(nby+80 >= 2010 && nby+80 < 2050)//Check for y with 4px error
 							{
-								angle += 10;
-							}
-							else if(barBallPos > 160)
-							{
-								angle -= 10;
+								angle = 360 - angle;
+								ball_y = 1920;
+								//Friction
+								if(barBallPos < 120)//120 -> 160-40 (middle of the paddle - middle of the ball)
+								{
+									angle -= 10;
+								}
+								else if(barBallPos > 120)
+								{
+									angle += 10;
+								}
 							}
 						}
 					}
@@ -248,8 +248,8 @@ void main(void)
 
 			//TODO check brick collision
 
-			ball_x += (aproxcos(angle)*velocity)/1000;
-			ball_y += (aproxsin(angle)*velocity)/1000;
+			ball_x += (aproxcos(angle)*velocity)/200;
+			ball_y += (aproxsin(angle)*velocity)/200;
 		}
 	}
 }
