@@ -18,6 +18,7 @@ static int ball_x;
 static int ball_y;
 static int velocity;
 static int angle;
+static int velx, vely;
 
 //next ball position, used for the collision with the bar
 static int nbx, nby;
@@ -45,72 +46,73 @@ const unsigned char palSprites[16]={
 	0x0f,0x19,0x29,0x39
 };
 
-int aproxcos(int angle) //(return * 1000)
+int aproxcos(int a) //(return * 1000)
 {
-	switch(angle%360)
+	switch((a/10)%36)
 	{
 		case 0:
-		case 180:
+		case 18:
 			return 1000;
-		case 90:
-		case 270:
+		case 9:
+		case 27:
 			return 0;
-		case 10:
-		case 350:
+		case 1:
+		case 35:
 			return 984;
-		case 170:
-		case 190:
+		case 17:
+		case 19:
 			return -984;
-		case 20:
-		case 340:
+		case 2:
+		case 34:
 			return 939;
-		case 160:
-		case 200:
+		case 16:
+		case 20:
 			return -939;
-		case 30:
-		case 330:
+		case 3:
+		case 33:
 			return 866;
-		case 150:
-		case 210:
+		case 15:
+		case 21:
 			return -866;
-		case 40:
-		case 320:
+		case 4:
+		case 32:
 			return 766;
-		case 140:
-		case 220:
+		case 14:
+		case 22:
 			return -766;
-		case 50:
-		case 310:
+		case 5:
+		case 31:
 			return 642;
-		case 130:
-		case 230:
+		case 13:
+		case 23:
 			return -642;
-		case 60:
-		case 300:
+		case 6:
+		case 30:
 			return 500;
-		case 120:
-		case 240:
+		case 12:
+		case 24:
 			return -500;
-		case 70:
-		case 290:
+		case 7:
+		case 29:
 			return 342;
-		case 110:
-		case 250:
+		case 11:
+		case 25:
 			return -342;
-		case 80:
-		case 280:
+		case 8:
+		case 28:
 			return 173;
-		case 100:
-		case 260:
+		case 10:
+		case 26:
 			return 173;
 		default:
-			return aproxcos((angle/10)*10);
+			return 0;
 	}
 	return 0;
 }
-int aproxsin(int angle) //(return * 1000)
+
+int aproxsin(int a) //(return * 1000)
 {
-	return aproxcos(angle + 90);
+	return -aproxcos(a + 90);
 }
 
 int abs(int val)
@@ -187,47 +189,49 @@ void main(void)
 		else
 		{	
 			//window collision
-			if(ball_y  < 1600)//Top
+			if(ball_y  < 80)//Top
 			{
-				ball_y = 1600;//DEBUG (/20)
-				angle = 180-angle;
+				ball_y = 80;//DEBUG (/20)
+				angle = 360 - angle;
 			}
 			if(ball_y  > 2300)//bottom
 			{
 				ball_y = 2300;
-				angle = 180 - angle;
+				angle = 360 - angle;
 				//TODO loose
 			}
-			if(ball_x  < 0)//Left
+			if(ball_x < 0)//Left
 			{
 				ball_x = 0;
-				angle = 360 - angle;
+				angle = 360 + 180 - angle;
 			}
-			if(ball_x  > 2480)//Right
+			if(ball_x > 2480)//Right
 			{
 				ball_x = 2480;
-				angle = 360 - angle;
+				angle = 360 + 180 - angle;
 			}
-			//angle = (angle+720) % 360;
+			angle = (angle+720) % 360;
 
 			//bar collision
 			//Check collision only when the ball is going down (for the bar)
 			if(angle < 180)
 			{
-				j = abs((aproxsin(angle)*velocity)/1000) > abs((aproxcos(angle)*velocity)/1000) ? abs((aproxsin(angle)*velocity)/1000) : abs((aproxcos(angle)*velocity)/1000);
-				for(i = 0; i <= MAX(j/10, 1); i++)
+				velx = (aproxcos(angle)*velocity)/1000;
+				vely = (aproxsin(angle)*velocity)/1000;
+				j = abs(vely);
+				for(i = 0; i <= MAX(j/20, 1); ++i)
 				{
-					nbx = ball_x + (((aproxcos(angle)*velocity)/1000)/j)*i;
-					nby = ball_y + (((aproxsin(angle)*velocity)/1000)/j)*i;
+					nbx = ball_x + (velx/j)*i;
+					nby = ball_y + i;
 
 					//check with the top of the bar
 					barBallPos = nbx-bar_x*10;
 					if(barBallPos+80 > 0 && barBallPos < 320)//Check for x (+80 for the width of the ball)
 					{
-						if(nby+80 >= 2010 && nby+80 < 2030)//Check for y with 2px error
+						if(nby+80 >= 2010 && nby+80 < 2050)//Check for y with 4px error
 						{
-							angle = 180 - angle;
-							ball_y = 1930;
+							angle = 360 - angle;
+							ball_y = 1920;
 							//Friction
 							if(barBallPos < 160)
 							{
@@ -236,18 +240,6 @@ void main(void)
 							else if(barBallPos > 160)
 							{
 								angle -= 10;
-							}
-						}
-						//Sides
-						else if(nby+80 > 2020 && nby < 2100)
-						{
-							if(barBallPos+80 < 10)//Left
-							{
-								angle = 360 - angle;
-							}
-							else if(barBallPos > 310)//Right
-							{
-								angle = 360 - angle;
 							}
 						}
 					}
