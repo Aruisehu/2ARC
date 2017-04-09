@@ -29,6 +29,16 @@ const unsigned char metaBar[]={
 	128
 };
 
+//Bricks metasprites
+//x, y, sprite, palette
+const unsigned char metaBrickBlue[]={
+	0,	0,	0xE0,	1,
+	8,	0,	0xE1,	1,
+	16,	0,	0xE1,	1,
+	24,	0,	0xE2,	1,
+	128
+};
+
 //Color palette
 const unsigned char palSprites[16]={
 	0x0f,0x17,0x27,0x37,
@@ -126,7 +136,7 @@ void main(void)
 	ppu_on_all();//enable rendering
 
 	//set initial coords
-	bar_x=114;
+	bar_x = 114;
 	ball_x = 1260;
 	ball_y = 1930;
 
@@ -141,6 +151,8 @@ void main(void)
 		spr = oam_meta_spr(bar_x, bar_y, spr, metaBar);
 		//ball
 		spr = oam_spr((unsigned char)(ball_x/10), (unsigned char)(ball_y/10), BALL_SPR, 3, spr);
+        
+        spr = oam_meta_spr(0x20, 0x20, spr, metaBrickBlue);
 
 		//poll pad
 		pad = pad_poll(0);
