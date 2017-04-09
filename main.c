@@ -1,4 +1,5 @@
 #include "neslib.h"
+#define BALL_SPR 0x40
 
 static unsigned char i, j;
 static unsigned char pad,spr;
@@ -133,32 +134,32 @@ void main(void)
 	{
 		ppu_wait_frame();//wait for next frame
 		
-		spr=0;
+		spr = 0;
 
 		//display metasprite
 		//bar
-		spr=oam_meta_spr(bar_x,bar_y,spr,metaBar);
+		spr = oam_meta_spr(bar_x, bar_y, spr, metaBar);
 		//ball
-		spr=oam_spr((unsigned char)(ball_x/10), (unsigned char)(ball_y/10),0x40,3,spr);
+		spr = oam_spr((unsigned char)(ball_x/10), (unsigned char)(ball_y/10), BALL_SPR, 3, spr);
 
 		//poll pad
-		pad=pad_poll(0);
+		pad = pad_poll(0);
 
 		//Move bar
-		if(pad&PAD_LEFT &&bar_x>= 1) 
+		if(pad&PAD_LEFT && bar_x>= 1) 
 		{
-			bar_x-=3;
+			bar_x -= 3;
 			if(ball_stuck)
 			{
-				ball_x-=30;
+				ball_x -= 30;
 			}
 		}
-		if(pad&PAD_RIGHT&&bar_x<=222) 
+		if(pad&PAD_RIGHT && bar_x<=222) 
 		{
-			bar_x+=3;
+			bar_x += 3;
 			if(ball_stuck)
 			{
-				ball_x+=30;
+				ball_x += 30;
 			}
 		}
 
@@ -213,18 +214,18 @@ void main(void)
 			//Check collision only when the ball is going down (for the bar)
 			if(angle < 180)
 			{
-				vely = (aproxsin(angle)*velocity)/200;
+				vely = (aproxsin(angle) * velocity) / 200;
 				if(ball_y + vely*10 > 2000)
 				{
-					velx = (aproxcos(angle)*velocity)/200;
+					velx = (aproxcos(angle) * velocity) / 200;
 					j = abs(vely);
 					for(i = 0; i <= MAX(j/20, 1); ++i)
 					{
-						nbx = ball_x + (velx/j)*i;
+						nbx = ball_x + (velx/j) * i;
 						nby = ball_y + i;
 
 						//check with the top of the bar
-						barBallPos = nbx-bar_x*10;
+						barBallPos = nbx - bar_x * 10;
 						if(barBallPos+80 > 0 && barBallPos < 320)//Check for x (+80 for the width of the ball)
 						{
 							if(nby+80 >= 2010 && nby+80 < 2050)//Check for y with 4px error
@@ -248,8 +249,8 @@ void main(void)
 
 			//TODO check brick collision
 
-			ball_x += (aproxcos(angle)*velocity)/200;
-			ball_y += (aproxsin(angle)*velocity)/200;
+			ball_x += (aproxcos(angle) * velocity) / 200;
+			ball_y += (aproxsin(angle) * velocity) / 200;
 		}
 	}
 }
