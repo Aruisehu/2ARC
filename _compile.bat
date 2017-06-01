@@ -7,11 +7,15 @@
 
 @ca65 crt0.s || goto fail
 
+@cc65 -Oi utils.c --add-source || goto fail
+
+@ca65 utils.s || goto fail
+
 @cc65 -Oi %1.c --add-source || goto fail
 
 @ca65 %1.s || goto fail
 
-@ld65 -C %2.cfg -o %1.nes crt0.o %1.o runtime.lib || goto fail
+@ld65 -C %2.cfg -o %1.nes crt0.o %1.o utils.o runtime.lib || goto fail
 
 @goto exit
 

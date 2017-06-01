@@ -1,5 +1,7 @@
 @echo off
 
-call _compile main nrom_128_horz
+call _compile mainv2 nrom_128_horz
 
 del *.o
+
+PAUSE
