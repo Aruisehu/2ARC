@@ -210,6 +210,7 @@ void main(void)
     static unsigned short aVelY;//Absolute motion of above
     static signed short nbx, nby;//Future ball's position to determinate collision
     static signed short barBallPos;//Position of the ball on the bar
+    static unsigned short xb1, xb2, yb1, yb2, xa1, xa2, ya1, ya2;
 
 	pal_spr(palette);//set sprite palette
 	pal_bg(palette);//set background palette from an array
@@ -350,18 +351,50 @@ void main(void)
             }
 
             //Bricks collision
-			tile=checkCollisionAndRemoveBrick(ballX>>4,ballY>>4);//Collide with brick on ball's top left corner
+            xa1 = ballX>>4;
+            ya1 = ballY>>4;
+            xa2 = xa1 + 8;
+            ya2 = ya1 + 8;
+			tile=checkCollisionAndRemoveBrick(xa1,ya1);//Collide with brick on ball's top left corner
+			if(tile)
+			{
+				xb1 = xa1>>4<<4;
+				xb2 = xb1+16;
+				yb1 = ya1>>4<<4;
+				yb2 = yb1+16;
+			}
 			if(!tile) 
 			{
-				tile=checkCollisionAndRemoveBrick((ballX>>4)+8,ballY>>4);//Collide with brick on ball's top right corner
+				tile=checkCollisionAndRemoveBrick(xa2,ya1);//Collide with brick on ball's top right corner
+				if(tile)
+				{
+					xb1 = xa2>>4<<4;
+					xb2 = xb1+16;
+					yb1 = ya1>>4<<4;
+					yb2 = yb1+16;
+				}
             }
             if(!tile) 
 			{
-				tile=checkCollisionAndRemoveBrick(ballX>>4,(ballY>>4)+8);//Collide with brick on ball's bottom left corner
+				tile=checkCollisionAndRemoveBrick(xa1,ya2);//Collide with brick on ball's bottom left corner
+				if(tile)
+				{
+					xb1 = xa1>>4<<4;
+					xb2 = xb1+16;
+					yb1 = ya2>>4<<4;
+					yb2 = yb1+16;
+				}
             }
             if(!tile) 
 			{
-				tile=checkCollisionAndRemoveBrick((ballX>>4)+8,(ballY>>4)+8);//Collide with brick on ball's bottom right corner
+				tile=checkCollisionAndRemoveBrick(xa2,ya2);//Collide with brick on ball's bottom right corner
+				if(tile)
+				{
+					xb1 = xa2>>4<<4;
+					xb2 = xb1+16;
+					yb1 = ya2>>4<<4;
+					yb2 = yb1+16;
+				}
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
             {
@@ -375,7 +408,53 @@ void main(void)
             	}
             	else
             	{
-            		//TODO determine which side we collide with and bounce accordingly
+
+            		if(ABS(xa1-xb2) < ABS(xa2-xb1))//True -> ball more on the right side
+            		{
+            			if(ya1 > yb1 && ya2 < yb2)//Right side confirmed because it is inside the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ya2 > yb2 && ABS(ya1-yb2) > ABS(xa1-xb2))//Right side a little under the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ya1 < yb1 && ABS(ya2-yb1) > ABS(xa1-xb2))//Right side a little over the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ABS(ya2 - yb1) < ABS(ya1-yb2))//True -> more on the top side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			else//That juste leave us with the bottom
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            		}
+            		else//More on the left side
+            		{
+            			if(ya1 > yb1 && ya2 < yb2)//Left side confirmed because it is inside the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ya2 > yb2 && ABS(ya1-yb2) > ABS(xa2-xb1))//Left side a little under the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ya1 < yb1 && ABS(ya2-yb1) > ABS(xa2-xb1))//Right side a little over the brick
+            			{
+							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else if(ABS(ya2 - yb1) < ABS(ya1-yb2))//True -> more on the top side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			else//That juste leave us with the bottom
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            		}
             		ballDirection = getCollisionBallDirection(ballDirection, TRUE);
             	}
             }
