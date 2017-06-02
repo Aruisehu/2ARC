@@ -53,11 +53,14 @@ const unsigned char metaattrs[]={
 //one brick is 32 pixel wide
 static unsigned char levelData[]= 
 {
-    0x00, 0x80, 0xFF, 0xFF,
-    0x00, 0xFF, 0xFF, 0xFF,
-    0x00, 0xFF, 0xFF, 0xFF,
-    0x00, 0xFF, 0xFF, 0xFF,
-    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
 };
 
 //calculate height of the level in pixels
@@ -113,7 +116,6 @@ void updateLineScreen(unsigned int line)
     vramBuffer[35] = NT_UPD_EOF;
 
     set_vram_update(vramBuffer);
-    ppu_wait_frame();
 }
 
 
@@ -123,19 +125,18 @@ void updateLineScreen(unsigned int line)
 unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
 {
 	//144 = 18 * 8
-	unsigned char brick;
-	signed int level_y=(144-y);//the level is stored upside down, flip the axis
+	static unsigned char brick, brickLine, brickBit, mask;
+        
+        brickLine = y>>3; // divide by 8 
+        brickBit = x>>5; // divide by 32
 
-	if(level_y<0) level_y+=LEVEL_HEIGHT;//loop the level to avoid reading outside the level data
-
-	brick = levelData[((level_y>>4)<<4)|(x>>4)];//level_y/16 is pixels to row, then *16 is row to offset, then x/16 is pixels to column
-
-	if(brick != 0)
+        mask = maskPpuBase>>brickBit;
+        brick = levelData[brickLine]&mask;
+	if(brick == mask && brickLine < sizeof(levelData))
 	{
-		levelData[((level_y>>4)<<4)|(x>>4)] = 0;
-		//TODO fix update
-		//prepare_row_update(y>>4,y>>4);
-		//set_vram_update(update_list);//the update is handled at next NMI
+            mask = ~mask;
+            levelData[brickLine] = levelData[brickLine]&mask;
+            updateLineScreen(brickLine);
 	}
 
 	return brick;
@@ -171,9 +172,10 @@ void main(void)
 
 	ppu_on_all();//enable rendering
         updateAttrs();
-        for (i=0; i <20; ++i)
+        for (i=0; i <30; ++i)
         {
             updateLineScreen(i);       
+            ppu_wait_frame();
         }
 
 	delay(60);//delay to show the preloaded part of the level
