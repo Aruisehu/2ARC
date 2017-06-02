@@ -18,6 +18,7 @@
 
 //palette data
 const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c };
+const unsigned char maskPpuBase = 0x80;
 
 //MetaSprite for the bar
 const unsigned char barMetaSprite[]={
@@ -46,9 +47,6 @@ const unsigned char metaattrs[]={
 	BGPAL3
 };
 
-//calculate height of the level in pixels
-#define LEVEL_HEIGHT	(sizeof(level_data)/16*16)
-
 //Each byte in level Data represents one row.
 //each bit in that byte determine if there is or not a brick in this position
 //ex: 0111 0101 (0x75) means there's no brick in first position, there's one in 2,3,4 position, etc...
@@ -62,6 +60,8 @@ static unsigned char levelData[]=
     0x00, 0xFF, 0xFF, 0xFF,
 };
 
+//calculate height of the level in pixels
+#define LEVEL_HEIGHT	(sizeof(levelData)/16*16)
 
 void updateAttrs()
 {
@@ -90,6 +90,7 @@ void updateLineScreen(unsigned int line)
     //line is a number comprise beetween 0 and 30
     static unsigned char vramBuffer[36];
     static unsigned char l;
+    static unsigned char maskPpu;
     vramBuffer[0] = MSB(NAMETABLE_A + (line *32))|NT_UPD_HORZ; //When tile is filled, fill the one at its right
     vramBuffer[1] = LSB(NAMETABLE_A + (line *32));
     vramBuffer[2] = 32; //Data length
@@ -127,11 +128,11 @@ unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
 
 	if(level_y<0) level_y+=LEVEL_HEIGHT;//loop the level to avoid reading outside the level data
 
-	brick = level_data[((level_y>>4)<<4)|(x>>4)];//level_y/16 is pixels to row, then *16 is row to offset, then x/16 is pixels to column
+	brick = levelData[((level_y>>4)<<4)|(x>>4)];//level_y/16 is pixels to row, then *16 is row to offset, then x/16 is pixels to column
 
 	if(brick != 0)
 	{
-		level_data[((level_y>>4)<<4)|(x>>4)] = 0;
+		levelData[((level_y>>4)<<4)|(x>>4)] = 0;
 		//TODO fix update
 		//prepare_row_update(y>>4,y>>4);
 		//set_vram_update(update_list);//the update is handled at next NMI
@@ -164,22 +165,22 @@ void main(void)
 	pal_spr(palette);//set sprite palette
 	pal_bg(palette);//set background palette from an array
 	pal_col(17,0x30);//white color for sprite
-        updateAttrs();
-        for (i=0; i <20; i++)
-        {
-            updateLineScreen(i);       
-        }
 
 	sprite_x=128;
 	sprite_y=120;
 
 	ppu_on_all();//enable rendering
+        updateAttrs();
+        for (i=0; i <20; ++i)
+        {
+            updateLineScreen(i);       
+        }
 
 	delay(60);//delay to show the preloaded part of the level
 
 	while(1)
 	{
-		ppu_wait_nmi();
+		ppu_wait_frame();
 
 		/*
 			Inputs

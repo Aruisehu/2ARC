@@ -1,3 +1,3 @@
-./_compile.sh main nrom_128_horz
+./_compile.sh mainv2 nrom_128_horz
 
 rm *.o
