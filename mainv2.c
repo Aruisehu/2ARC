@@ -406,56 +406,25 @@ void main(void)
             	{
 					ballDirection = getCollisionBallDirection(ballDirection, FALSE);
             	}
-            	else
+            	else if (ballDirection > 4 && ballDirection < 12 && ((xa1 >= xb1 && xa2 <= xb2) || (ya2 >= yb1 && ya1 < yb1 && ABS(ya2-yb1) < MIN(ABS(xa1-xb1), ABS(xa2-xb2)))))//Top
             	{
-
-            		if(ABS(xa1-xb2) < ABS(xa2-xb1))//True -> ball more on the right side
-            		{
-            			if(ya1 > yb1 && ya2 < yb2)//Right side confirmed because it is inside the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ya2 > yb2 && ABS(ya1-yb2) > ABS(xa1-xb2))//Right side a little under the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ya1 < yb1 && ABS(ya2-yb1) > ABS(xa1-xb2))//Right side a little over the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ABS(ya2 - yb1) < ABS(ya1-yb2))//True -> more on the top side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            			}
-            			else//That juste leave us with the bottom
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            			}
-            		}
-            		else//More on the left side
-            		{
-            			if(ya1 > yb1 && ya2 < yb2)//Left side confirmed because it is inside the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ya2 > yb2 && ABS(ya1-yb2) > ABS(xa2-xb1))//Left side a little under the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ya1 < yb1 && ABS(ya2-yb1) > ABS(xa2-xb1))//Right side a little over the brick
-            			{
-							ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			}
-            			else if(ABS(ya2 - yb1) < ABS(ya1-yb2))//True -> more on the top side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            			}
-            			else//That juste leave us with the bottom
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            			}
-            		}
             		ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            	}
+            	else if(ballDirection > 0 && ballDirection < 8 && ((ya1 >= yb1 && ya2 <= yb2) || (xa1 <= xb2 && xa2 > xb2 && ABS(xa1-xb2) < MIN(ABS(ya1-yb1), ABS(ya2-yb2)))))//Right
+            	{
+					ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            	}
+            	else if((ballDirection < 4 || ballDirection > 12) && ((xa1 >= xb1 && xa2 <= xb2) || (ya1 <= yb2 && ya2 > yb1 && ABS(ya1-yb2) < MIN(ABS(xa1-xb1), ABS(xa2-xb2)))))//Bottom
+            	{
+					ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            	}
+            	else if(ballDirection > 8 && ((ya1 >= yb1 && ya2 <= yb2) || (xa2 >= xb1 && xa1 < xb1 && ABS(xa2-xb1) < MIN(ABS(ya1-yb1), ABS(ya2-yb2)))))//Left
+            	{
+					ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            	}
+            	else 
+            	{
+            		//Problem
             	}
             }
 
