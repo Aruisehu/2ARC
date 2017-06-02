@@ -5,258 +5,247 @@
 #define BGPAL1	0x55
 #define BGPAL2	0xaa
 #define BGPAL3	0xff
+#define NULL_BG 0xff //part of the tile that is completely black to represents null BG
 
-static unsigned char i, j, k;
+static unsigned char i, j, k, l;
 static unsigned char pad,spr;
 
 //bar position
 static unsigned char barX;
-static unsigned char barY = 200;
+const unsigned char barY = 200;
 //ball position & velocity
 static unsigned char ballStuck = 1;
-static int ballX;
-static int ballY;
-static int velocity;
-static int angle;
-static int velX, velY;
+static short ballX;
+static short ballY;
+static short velocity;
+static short angle;
+static short velX, velY;
 //next ball position, used for the collision with the bar
-static int nbx, nby;
+static short nbx, nby;
 //position of the ball on the bar (x)
-static int barBallPos;
-static int brickX, brickY;
-static int levelDataIndex;
+static unsigned short barBallPos;
+static const unsigned char maskPpuBase = 0x80;
+static unsigned char maskPpu;
+static unsigned char maskLine;
+/*
+ *Here is a reprensentation of how the neighborsBrick is supposed to works
+ *B represents the position where is the ball and numbers reprensents the brick around him
+ *neighborsBrick array is supposed to contain index in levelData of the bricks around the ball
+ * _________
+ *| 0| 1| 2|
+ *|________
+ *| 3| B| 4|
+ *|________
+ *| 5| 6| 7|
+ *|________
+ *
+ */
 
 //Bar metasprite
 //x, y, sprite, palette
 const unsigned char metaBar[]={
-	0,	0,	0xF0,	1,
-	8,	0,	0xF1,	1,
-	16,	0,	0xF1,	1,
-	24,	0,	0xF2,	1,
-	128
+    0,	0,	0xF0,	1,
+    8,	0,	0xF1,	1,
+    16,	0,	0xF1,	1,
+    24,	0,	0xF2,	1,
+    128
 };
 
 //Bricks metasprites
 //x, y, sprite, palette
 const unsigned char metaBrickBlue[]={
-	0,	0,	0xE0,	1,
-	8,	0,	0xE1,	1,
-	16,	0,	0xE1,	1,
-	24,	0,	0xE2,	1,
-	128
+    0,	0,	0xE0,	1,
+    8,	0,	0xE1,	1,
+    16,	0,	0xE1,	1,
+    24,	0,	0xE2,	1,
+    128
 };
 
 //Color palette
 const unsigned char palSprites[16]={
-	0x0f,0x17,0x27,0x37,
-	0x0f,0x11,0x21,0x31,
-	0x0f,0x15,0x25,0x35,
-	0x0f,0x19,0x29,0x39
+    0x0f,0x17,0x27,0x37,
+    0x0f,0x11,0x21,0x31,
+    0x0f,0x15,0x25,0x35,
+    0x0f,0x19,0x29,0x39
 };
 
-int aproxCos(int a) //(return val * 200)
+short aproxCos(short a) //(return val * 200)
 {
-	switch((a/10)%36)
-	{
-		case 0:
-		case 18:
-			return 200;
-		case 9:
-		case 27:
-			return 0;
-		case 1:
-		case 35:
-			return 197;
-		case 17:
-		case 19:
-			return -197;
-		case 2:
-		case 34:
-			return 188;
-		case 16:
-		case 20:
-			return -188;
-		case 3:
-		case 33:
-			return 173;
-		case 15:
-		case 21:
-			return -173;
-		case 4:
-		case 32:
-			return 153;
-		case 14:
-		case 22:
-			return -153;
-		case 5:
-		case 31:
-			return 128;
-		case 13:
-		case 23:
-			return -128;
-		case 6:
-		case 30:
-			return 100;
-		case 12:
-		case 24:
-			return -100;
-		case 7:
-		case 29:
-			return 68;
-		case 11:
-		case 25:
-			return -68;
-		case 8:
-		case 28:
-			return 35;
-		case 10:
-		case 26:
-			return 35;
-		default:
-			return 0;
-	}
-	return 0;
+    switch((a/10)%36)
+    {
+        case 0:
+            return 200;
+        case 18:
+            return -200;
+        case 9:
+        case 27:
+            return 0;
+        case 1:
+        case 35:
+            return 197;
+        case 17:
+        case 19:
+            return -197;
+        case 2:
+        case 34:
+            return 188;
+        case 16:
+        case 20:
+            return -188;
+        case 3:
+        case 33:
+            return 173;
+        case 15:
+        case 21:
+            return -173;
+        case 4:
+        case 32:
+            return 153;
+        case 14:
+        case 22:
+            return -153;
+        case 5:
+        case 31:
+            return 128;
+        case 13:
+        case 23:
+            return -128;
+        case 6:
+        case 30:
+            return 100;
+        case 12:
+        case 24:
+            return -100;
+        case 7:
+        case 29:
+            return 68;
+        case 11:
+        case 25:
+            return -68;
+        case 8:
+        case 28:
+            return 35;
+        case 10:
+        case 26:
+            return 35;
+        default:
+            return 0;
+    }
+    return 0;
 }
 
-int aproxSin(int a) //(return val * 200)
+short aproxSin(short a) //(return val * 200)
 {
-	switch(((a/10)+9)%36)
-	{
-		case 0:
-			return -200;
-		case 18:
-			return 200;
-		default:
-			return -aproxCos(a + 90);
-	}
+    return -aproxCos(a + 90);
 }
 
-int abs(int val)
+short abs(short val)
 {
-	return val < 0 ? val * -1 : val;
+    return val < 0 ? val * -1 : val;
 }
-
 
 /*
-Background test
-*/
-static unsigned char updateList[3+32+3+8+1];//3 bytes address and length for 32 tiles, 3 bytes address and length for 8 attributes, end marker
+   Background test
+   */
 const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c };
 
 //metatile definitions, one metatile by another, 2 bytes per metatile
 const unsigned char metatiles[]={
-	0x00,0x00,0x00,0x00,//Empty
-	0xD0,0xD1,0xE0,0xE1,//Brick red
-	0xD0,0xD1,0xE0,0xE1,//Brick yellow
-	0xD0,0xD1,0xE0,0xE1,//Brick green
-	0xD0,0xD1,0xE0,0xE1//Brick blue
+    0x00,0x00,0x00,0x00,//Empty
+    0xD0,0xD1,0xD1,0xD2,//base brick
 };
 
 //metatile attributes, define which palette should be used for a metatile
 
 const unsigned char metaattrs[]={
-	BGPAL0,
-	BGPAL0,
-	BGPAL1,
-	BGPAL2,
-	BGPAL3
+    BGPAL0,
+    BGPAL0,
+    BGPAL1,
+    BGPAL2,
+    BGPAL3
 };
 
-static unsigned char levelData[]={
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,//Minimal use line
-	0x01,0x00,0x00,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,
-	0x00,0x00,0x00,0x02,0x03,0x02,0x02,0x02,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x01,0x00,0x00,0x03,0x04,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x02,0x01,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,
-	0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00//End line
+/*static unsigned char levelData[]={
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,//Minimal use line
+    0x01,0x00,0x00,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,
+    0x00,0x00,0x00,0x02,0x03,0x02,0x02,0x02,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x01,0x00,0x00,0x03,0x04,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x02,0x01,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,
+    0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00//End line
+};*/
+
+//Each byte in level Data represents one row.
+//each bit in that byte determine if there is or not a brick in this position
+//ex: 0111 0101 (0x75) means there's no brick in first position, there's one in 2,3,4 position, etc...
+//one brick is 32 pixel wide
+static unsigned char levelData[]= 
+{
+    0x00, 0x80, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
 };
 
-void prepareRowUpdate(unsigned char nameRow,unsigned int levelRow)
+static unsigned char vramBuffer[36];
+static unsigned char attrBuffer[68];
+
+void updateAttrs()
 {
-	static unsigned char i,tile,attr,tileOffset,updateNametableOffset,updateAttributeOffset,mask1,mask2,mask3,mask4;
-	static unsigned int nameAddress,attributeAddress;
-	static const unsigned char *src;
-
-        nameAddress=NAMETABLE_A+(nameRow<<5);
-        attributeAddress=NAMETABLE_A+960+((nameRow>>2)<<3);
-
-        updateList[0]=MSB(nameAddress)|NT_UPD_HORZ;//set nametable update address
-        updateList[1]=LSB(nameAddress);
-
-        updateList[35]=MSB(attributeAddress)|NT_UPD_HORZ;//set attribute table update address
-        updateList[36]=LSB(attributeAddress);
-
-        updateNametableOffset=3;//offset in the update list for nametable data
-        updateAttributeOffset=3+32+3;//offset for attribute data
-
-        src=&levelData[levelRow<<4];//get offset in the level data
-
-        tileOffset= nameRow&1 ? 2 : 0;
-
-        if(!(nameRow&2))//select appropriate masks for attribute bytes
-        {
-            mask1=0xfc;
-            mask2=0x03;
-            mask3=0xf3;
-            mask4=0x0c;
-        }
-        else
-        {
-            mask1=0xcf;
-            mask2=0x30;
-            mask3=0x3f;
-            mask4=0xc0;
-        }
-
-        for(i=0;i<8;++i)//as two neighborn attributes are grouped into a byte, the loop handles two metatiles in one iteration
-        {
-            tile=*src++;//get first metatile code
-
-            attr=(updateList[updateAttributeOffset]&mask1)|(metaattrs[tile]&mask2);//get metatile attribute, remember it
-
-            tile=(tile<<2)+tileOffset;//get metatile offset
-
-            updateList[updateNametableOffset+0]=metatiles[tile+0];//put top or bottom half of the first metatile into the update buffer
-            updateList[updateNametableOffset+1]=metatiles[tile+1];
-
-            tile=*src++;//get second metatile code
-
-            updateList[updateAttributeOffset++]=(attr&mask3)|(metaattrs[tile]&mask4);//get attribute, add the other attribute, put into update buffer
-
-            tile=(tile<<2)+tileOffset;//get metatile offset
-
-            updateList[updateNametableOffset+2]=metatiles[tile+0];//put top or bottom half of the second metatile into the update buffer
-            updateList[updateNametableOffset+3]=metatiles[tile+1];
-
-            updateNametableOffset+=4;
-        }
-}
-
-void preloadScreen(unsigned int levelY, unsigned int startRow, unsigned int endRow)
-{
-    static unsigned char i;
-    levelY += startRow * 8;
-
-    for(i=startRow;i< endRow;++i)
+    //set color for background
+    //See https://wiki.nesdev.com/w/index.php/PPU_attribute_tables for more details
+    //on how this works
+    attrBuffer[0] = 0x23|NT_UPD_HORZ;
+    attrBuffer[1] = 0xC0;
+    attrBuffer[2] = 64;
+    for(l=0; l<16; ++l)
     {
-        prepareRowUpdate(29-i,levelY>>4);//prepare a row, bottom to top
-
-        flush_vram_update(updateList);
-
-        levelY+=8;
+        attrBuffer[l*4 + 3] = BGPAL0;
+        attrBuffer[l*4 + 4] = BGPAL1; 
+        attrBuffer[l*4 + 5] = BGPAL2;
+        attrBuffer[l*4 + 6] = BGPAL3;
     }
+    attrBuffer[67] = NT_UPD_EOF;
+    set_vram_update(attrBuffer);
+    ppu_wait_frame();
 }
 
+void updateLineScreen(unsigned char line)
+{
+    //line is a number comprise beetween 0 and 30
+    vramBuffer[0] = MSB(NAMETABLE_A + (line *32))|NT_UPD_HORZ; //When tile is filled, fill the one at its right
+    vramBuffer[1] = LSB(NAMETABLE_A + (line *32));
+    vramBuffer[2] = 32; //Data length
+    for (l=0;l<8;++l)
+    {
+        maskPpu = maskPpuBase>>l;
+        if ((levelData[line]&maskPpu) == maskPpu)
+        {
+            vramBuffer[l*4 +3]= 0xd0; 
+            vramBuffer[l*4 +4]= 0xd1; 
+            vramBuffer[l*4 +5]= 0xd1; 
+            vramBuffer[l*4 +6]= 0xd2; 
+        } else {
+            vramBuffer[l*4 +3]= 0x00; 
+            vramBuffer[l*4 +4]= 0x00; 
+            vramBuffer[l*4 +5]= 0x00; 
+            vramBuffer[l*4 +6]= 0x00; 
+        }
+    }
+    vramBuffer[35] = NT_UPD_EOF;
 
+    set_vram_update(vramBuffer);
+    ppu_wait_frame();
+}
 
 void main(void)
 {
@@ -267,29 +256,22 @@ void main(void)
     ballX = 1260;
     ballY = 1930;
 
-    //Test background
     pal_bg(palette);//set background palette from an array
     pal_col(17,0x30);//white color for sprite
 
-    updateList[0]=0x20|NT_UPD_HORZ;//horizontal update sequence, dummy address
-    updateList[1]=0x00;
-    updateList[2]=32;//length of nametable update sequence
-
-    updateList[35]=0x20|NT_UPD_HORZ;
-    updateList[36]=0x00;
-    updateList[37]=8;//length of attribute update sequence
-
-    updateList[46]=NT_UPD_EOF;
-    preloadScreen(0, 0, 30);
-    //BG end
-
     ppu_on_all();//enable rendering
 
-    while(1)
+    updateAttrs();
+    for (i=0; i<20; ++i)
     {
-        ppu_wait_nmi();//wait for next nmi
+        updateLineScreen(i);
+    }
 
+    while(TRUE)
+    {
+        ppu_wait_frame();//wait for next nmi
         spr = 0;
+
 
         //display metasprite
         //bar
@@ -356,12 +338,12 @@ void main(void)
             if(ballX < 0)//Left
             {
                 ballX = 0;
-                angle = 360 + 180 - angle;
+                angle = 540 - angle + (rand8() % 5);
             }
             else if(ballX > 2480)//Right
             {
                 ballX = 2480;
-                angle = 360 + 180 - angle;
+                angle = 540 - angle + (rand8() % 5);
             }
             angle = (angle+720) % 360;
 
@@ -401,9 +383,12 @@ void main(void)
                     }
                 }
             }
-            //Bricks collisions
 
-            velY = (aproxSin(angle) * velocity) / 200;
+            //Bricks collisions
+            //TODO count remaining bricks to win
+            //TODO Fix collision
+/*            velY = (aproxSin(angle) * velocity) / 200;
+            //calculateBallIndex();
             if(ballY + velY*10 < 1700)//Check only when near bricks
             {
                 velX = (aproxCos(angle) * velocity) / 200;
@@ -427,7 +412,7 @@ void main(void)
                         break;
                     }
                 }
-            }
+            }*/
 
             ballX += (aproxCos(angle) * velocity) / 200;
             ballY += (aproxSin(angle) * velocity) / 200;

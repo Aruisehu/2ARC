@@ -16,8 +16,6 @@
 #define BGPAL3	0xff	//bin 11111111
 
 
-static unsigned char update_list[3+32+3+8+1];//3 bytes address and length for 32 tiles, 3 bytes address and length for 8 attributes, end marker
-
 //palette data
 const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c };
 
@@ -48,124 +46,75 @@ const unsigned char metaattrs[]={
 	BGPAL3
 };
 
-//level data, it is upside down to make it easier to access
-unsigned char level_data[]={
-	0x03,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x04,
-	0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x02,
-	0x00,0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,
-	0x00,0x00,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x00,0x00,
-	0x00,0x00,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x00,0x00,
-	0x00,0x00,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x00,0x00,
-	0x03,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x04,
-	0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x02,//Last line, following are for offset
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-};
-
 //calculate height of the level in pixels
 #define LEVEL_HEIGHT	(sizeof(level_data)/16*16)
 
-
-
-//this function prepares data for a row update
-//also used to fill the screen before scrolling starts
-void prepare_row_update(unsigned char name_row,unsigned int level_row)
+//Each byte in level Data represents one row.
+//each bit in that byte determine if there is or not a brick in this position
+//ex: 0111 0101 (0x75) means there's no brick in first position, there's one in 2,3,4 position, etc...
+//one brick is 32 pixel wide
+static unsigned char levelData[]= 
 {
-	static unsigned char i,tile,attr,tile_off,updn_off,upda_off,mask1,mask2,mask3,mask4;
-	static unsigned int name_adr,attr_adr;
-	static const unsigned char *src;
+    0x00, 0x80, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0xFF, 0xFF,
+};
 
-	if(name_row<30)//calculate tile and attribute row addresses in a nametable
-	{
-		name_adr=NAMETABLE_A+(name_row<<5);
-		attr_adr=NAMETABLE_A+960+((name_row>>2)<<3);
-	}
-	else
-	{
-		name_row-=30;
 
-		name_adr=NAMETABLE_C+(name_row<<5);
-		attr_adr=NAMETABLE_C+960+((name_row>>2)<<3);
-	}
-
-	update_list[0]=MSB(name_adr)|NT_UPD_HORZ;//set nametable update address
-	update_list[1]=LSB(name_adr);
-
-	update_list[35]=MSB(attr_adr)|NT_UPD_HORZ;//set attribute table update address
-	update_list[36]=LSB(attr_adr);
-
-	updn_off=3;//offset in the update list for nametable data
-	upda_off=3+32+3;//offset for attribute data
-
-	src=&level_data[level_row<<4];//get offset in the level data
-
-	if(!(name_row&1)) tile_off=0; else tile_off=2;//metatile data offset, 2 for odd row numbers
-
-	if(!(name_row&2))//select appropriate masks for attribute bytes
-	{
-		mask1=0xfc;
-		mask2=0x03;
-		mask3=0xf3;
-		mask4=0x0c;
-	}
-	else
-	{
-		mask1=0xcf;
-		mask2=0x30;
-		mask3=0x3f;
-		mask4=0xc0;
-	}
-
-	for(i=0;i<8;++i)//as two neighborn attributes are grouped into a byte, the loop handles two metatiles in one iteration
-	{
-		tile=*src++;//get first metatile code
-
-		attr=(update_list[upda_off]&mask1)|(metaattrs[tile]&mask2);//get metatile attribute, remember it
-
-		tile=(tile<<2)+tile_off;//get metatile offset
-
-		update_list[updn_off+0]=metatiles[tile+0];//put top or bottom half of the first metatile into the update buffer
-		update_list[updn_off+1]=metatiles[tile+1];
-
-		tile=*src++;//get second metatile code
-
-		update_list[upda_off++]=(attr&mask3)|(metaattrs[tile]&mask4);//get attribute, add the other attribute, put into update buffer
-
-		tile=(tile<<2)+tile_off;//get metatile offset
-
-		update_list[updn_off+2]=metatiles[tile+0];//put top or bottom half of the second metatile into the update buffer
-		update_list[updn_off+3]=metatiles[tile+1];
-
-		updn_off+=4;
-	}
+void updateAttrs()
+{
+    //set color for background
+    //See https://wiki.nesdev.com/w/index.php/PPU_attribute_tables for more details
+    //on how this works
+    static unsigned char attrBuffer[68];
+    static unsigned char l;
+    attrBuffer[0] = 0x23|NT_UPD_HORZ;
+    attrBuffer[1] = 0xC0;
+    attrBuffer[2] = 64;
+    for(l=0; l<16; ++l)
+    {
+        attrBuffer[l*4 + 3] = BGPAL0;
+        attrBuffer[l*4 + 4] = BGPAL1; 
+        attrBuffer[l*4 + 5] = BGPAL2;
+        attrBuffer[l*4 + 6] = BGPAL3;
+    }
+    attrBuffer[67] = NT_UPD_EOF;
+    set_vram_update(attrBuffer);
+    ppu_wait_frame();
 }
 
-
-
-//fill the whole screen with actual level graphics
-//it uses the prepare_row function, but copies the data into VRAM using
-//flush_vram_update instead of the update system (would take 30 frames otherwise)
-void preload_screen(unsigned int level_y)
+void updateLineScreen(unsigned int line)
 {
-	static unsigned char i;
+    //line is a number comprise beetween 0 and 30
+    static unsigned char vramBuffer[36];
+    static unsigned char l;
+    vramBuffer[0] = MSB(NAMETABLE_A + (line *32))|NT_UPD_HORZ; //When tile is filled, fill the one at its right
+    vramBuffer[1] = LSB(NAMETABLE_A + (line *32));
+    vramBuffer[2] = 32; //Data length
+    for (l=0;l<8;++l)
+    {
+        maskPpu = maskPpuBase>>l;
+        if ((levelData[line]&maskPpu) == maskPpu)
+        {
+            vramBuffer[l*4 +3]= 0xd0; 
+            vramBuffer[l*4 +4]= 0xd1; 
+            vramBuffer[l*4 +5]= 0xd1; 
+            vramBuffer[l*4 +6]= 0xd2; 
+        } else {
+            vramBuffer[l*4 +3]= 0x00; 
+            vramBuffer[l*4 +4]= 0x00; 
+            vramBuffer[l*4 +5]= 0x00; 
+            vramBuffer[l*4 +6]= 0x00; 
+        }
+    }
+    vramBuffer[35] = NT_UPD_EOF;
 
-	for(i=0;i<18;++i)
-	{
-		prepare_row_update(17-i,level_y>>4);//prepare a row, bottom to top
-
-		flush_vram_update(update_list);
-
-		level_y+=8;
-	}
+    set_vram_update(vramBuffer);
+    ppu_wait_frame();
 }
+
 
 
 //get metatile code for given x,y level position in pixels, relative to current offset in the level
@@ -215,18 +164,11 @@ void main(void)
 	pal_spr(palette);//set sprite palette
 	pal_bg(palette);//set background palette from an array
 	pal_col(17,0x30);//white color for sprite
-
-	update_list[0]=0x20|NT_UPD_HORZ;//horizontal update sequence, dummy address
-	update_list[1]=0x00;
-	update_list[2]=32;//length of nametable update sequence
-
-	update_list[35]=0x20|NT_UPD_HORZ;
-	update_list[36]=0x00;
-	update_list[37]=8;//length of attribute update sequence
-
-	update_list[46]=NT_UPD_EOF;
-
-	preload_screen(0);//fill the whole screen with beginning of the level
+        updateAttrs();
+        for (i=0; i <20; i++)
+        {
+            updateLineScreen(i);       
+        }
 
 	sprite_x=128;
 	sprite_y=120;
