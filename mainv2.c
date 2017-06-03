@@ -396,34 +396,68 @@ void main(void)
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
             {
-                if(ballDirection == 0 || ballDirection == 8)
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                }
-                else if(ballDirection == 4 || ballDirection == 12)
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                }
-                else if (ballDirection > 4 && ballDirection < 12 && ((xa1 >= xb1 && xa2 <= xb2) || (ya2 >= yb1 && ya1 < yb1 && ABS(ya2-yb1) < MIN(ABS(xa1-xb1), ABS(xa2-xb2)))))//Top
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                }
-                else if(ballDirection > 0 && ballDirection < 8 && ((ya1 >= yb1 && ya2 <= yb2) || (xa1 <= xb2 && xa2 > xb2 && ABS(xa1-xb2) < MIN(ABS(ya1-yb1), ABS(ya2-yb2)))))//Right
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                }
-                else if((ballDirection < 4 || ballDirection > 12) && ((xa1 >= xb1 && xa2 <= xb2) || (ya1 <= yb2 && ya2 > yb1 && ABS(ya1-yb2) < MIN(ABS(xa1-xb1), ABS(xa2-xb2)))))//Bottom
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                }
-                else if(ballDirection > 8 && ((ya1 >= yb1 && ya2 <= yb2) || (xa2 >= xb1 && xa1 < xb1 && ABS(xa2-xb1) < MIN(ABS(ya1-yb1), ABS(ya2-yb2)))))//Left
-                {
-                    ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                }
-                else
-                {
-                    //Problem
-                }
+            	switch(ballDirection)
+            	{
+            		case 0:
+            		case 8:
+            			ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			break;
+            		case 4:
+            		case 12:
+            			ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			break;
+            		case 1:
+            		case 2:
+            		case 3://Bottom right corner
+            			if(xa2 > xb2 && (ya2 < yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else//Bottom side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			break;
+            		case 5:
+            		case 6:
+            		case 7://Top right corner
+            			if(xa2 > xb2 && (ya1 > yb1 || ABS(xa1-xb2) < ABS(ya2-yb1)))//Right side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else//Top side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			break;
+            		case 9:
+            		case 10:
+            		case 11://Top left corner
+            			if(xa1 < xb1 &&(ya1 > yb1 || ABS(xa2-xb1) < ABS(ya2-yb1)))//Left side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else//Top side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			break;
+            		case 13:
+            		case 14:
+            		case 15://Bottom left corner
+            			if(xa1 < xb1 && (ya2 < yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+            			}
+            			else//Top side
+            			{
+            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+            			}
+            			break;
+            		default:
+            			//The fuck? this is not possible
+            			break;
+            	}
                 if(updateBrickCount())
                 {
                     // reset all values when the level change
