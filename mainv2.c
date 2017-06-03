@@ -356,20 +356,20 @@ void main(void)
             tile=checkCollisionAndRemoveBrick(xa1,ya1);//Collide with brick on ball's top left corner
             if(tile)
             {
-                xb1 = xa1>>4<<4;
-                xb2 = xb1+16;
-                yb1 = ya1>>4<<4;
-                yb2 = yb1+16;
+                xb1 = xa1>>5<<5;
+                xb2 = xb1+32;
+                yb1 = ya1>>3<<3;
+                yb2 = yb1+8;
             }
             if(!tile)
             {
                 tile=checkCollisionAndRemoveBrick(xa2,ya1);//Collide with brick on ball's top right corner
                 if(tile)
                 {
-                    xb1 = xa2>>4<<4;
-                    xb2 = xb1+16;
-                    yb1 = ya1>>4<<4;
-                    yb2 = yb1+16;
+                    xb1 = xa2>>5<<5;
+                    xb2 = xb1+32;
+                    yb1 = ya1>>3<<3;
+                    yb2 = yb1+8;
                 }
             }
             if(!tile)
@@ -377,10 +377,10 @@ void main(void)
                 tile=checkCollisionAndRemoveBrick(xa1,ya2);//Collide with brick on ball's bottom left corner
                 if(tile)
                 {
-                    xb1 = xa1>>4<<4;
-                    xb2 = xb1+16;
-                    yb1 = ya2>>4<<4;
-                    yb2 = yb1+16;
+                    xb1 = xa1>>5<<5;
+                    xb2 = xb1+32;
+                    yb1 = ya2>>3<<3;
+                    yb2 = yb1+8;
                 }
             }
             if(!tile)
@@ -388,10 +388,10 @@ void main(void)
                 tile=checkCollisionAndRemoveBrick(xa2,ya2);//Collide with brick on ball's bottom right corner
                 if(tile)
                 {
-                    xb1 = xa2>>4<<4;
-                    xb2 = xb1+16;
-                    yb1 = ya2>>4<<4;
-                    yb2 = yb1+16;
+                    xb1 = xa2>>5<<5;
+                    xb2 = xb1+32;
+                    yb1 = ya2>>3<<3;
+                    yb2 = yb1+8;
                 }
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
