@@ -19,7 +19,7 @@
 //palette data
 const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c };
 const unsigned char maskPpuBase = 0x80;
-const unsigned char currentLevel = 0;
+static unsigned char currentLevel = 0;
 
 //MetaSprite for the bar
 const unsigned char barMetaSprite[]={
@@ -48,7 +48,7 @@ const unsigned char metaattrs[]={
     BGPAL3
 };
 
-static unsigned char firstLevelData[]= 
+static unsigned char firstLevelData[] =
 {
     0x00, 0x00, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,
@@ -60,7 +60,7 @@ static unsigned char firstLevelData[]=
     0x00, 0x00,
 };
 
-static unsigned char secondLevelData[]= 
+static unsigned char secondLevelData[] =
 {
     0x00, 0x00, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,
@@ -82,6 +82,11 @@ static unsigned char* allLevels[] =
 //one brick is 32 pixel wide
 static unsigned char levelData[30];
 
+// number of brick in all level. Used to
+static unsigned char bricksInLevel[] = {144, 137};
+
+static unsigned char destroyedBrickCount = 0;
+
 //calculate height of the level in pixels
 #define LEVEL_HEIGHT	(sizeof(levelData)/16*16)
 
@@ -98,7 +103,7 @@ void updateAttrs()
     for(l=0; l<16; ++l)
     {
         attrBuffer[l*4 + 3] = BGPAL0;
-        attrBuffer[l*4 + 4] = BGPAL1; 
+        attrBuffer[l*4 + 4] = BGPAL1;
         attrBuffer[l*4 + 5] = BGPAL2;
         attrBuffer[l*4 + 6] = BGPAL3;
     }
@@ -121,15 +126,15 @@ void updateLineBricks(unsigned int line)
         maskPpu = maskPpuBase>>l;
         if ((levelData[line]&maskPpu) == maskPpu)
         {
-            vramBuffer[l*4 +3]= 0xd0; 
-            vramBuffer[l*4 +4]= 0xd1; 
-            vramBuffer[l*4 +5]= 0xd1; 
-            vramBuffer[l*4 +6]= 0xd2; 
+            vramBuffer[l*4 +3]= 0xd0;
+            vramBuffer[l*4 +4]= 0xd1;
+            vramBuffer[l*4 +5]= 0xd1;
+            vramBuffer[l*4 +6]= 0xd2;
         } else {
-            vramBuffer[l*4 +3]= 0x00; 
-            vramBuffer[l*4 +4]= 0x00; 
-            vramBuffer[l*4 +5]= 0x00; 
-            vramBuffer[l*4 +6]= 0x00; 
+            vramBuffer[l*4 +3]= 0x00;
+            vramBuffer[l*4 +4]= 0x00;
+            vramBuffer[l*4 +5]= 0x00;
+            vramBuffer[l*4 +6]= 0x00;
         }
     }
     vramBuffer[35] = NT_UPD_EOF;
@@ -146,7 +151,7 @@ unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
     //144 = 18 * 8
     static unsigned char brick, brickLine, brickBit, mask;
 
-    brickLine = y>>3; // divide by 8 
+    brickLine = y>>3; // divide by 8
     brickBit = x>>5; // divide by 32
 
     mask = maskPpuBase>>brickBit;
@@ -157,7 +162,7 @@ unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
         levelData[brickLine] = levelData[brickLine]&mask;
         updateLineBricks(brickLine);
     }
-    else 
+    else
     {
         brick = NULL;
     }
@@ -165,6 +170,29 @@ unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
     return brick;
 }
 
+// update the score and change the level if necessary. Return true in this case
+unsigned char updateBrickCount()
+{
+    static int i;
+    destroyedBrickCount++;
+    if(destroyedBrickCount == bricksInLevel[currentLevel])
+    {
+        currentLevel++;
+        // TODO display transition screen
+
+        delay(60);
+        memcpy(levelData, allLevels[currentLevel], 30);
+        updateAttrs();
+        for(i = 0; i < 30; ++i)
+        {
+            updateLineBricks(i);
+            ppu_wait_frame();
+        }
+        destroyedBrickCount = 0;
+        return TRUE;
+    }
+    return FALSE;
+}
 
 
 //main function, program starts here
@@ -176,7 +204,7 @@ void main(void)
     static unsigned char barY = 200;//Current Y position of the bar (should never change)
     static unsigned char spr;//Used for sprite drawing
     static unsigned char ballStuck = TRUE;//1 when the ball is on the bar 0 when it's free
-    static signed short ballX = 126<<4;//Current ball X position, position are multiplied by 16 to increase precision 
+    static signed short ballX = 126<<4;//Current ball X position, position are multiplied by 16 to increase precision
     static signed short ballY = 193<<4;//Current ball Y position, position are multiplied by 16 to increase precision
     static unsigned char ballVelocity;//The ball velocity
     static unsigned char ballDirection;//The ball direction (0 to 15) 0 is upward, 4 is left, 8 is downward, 12 is right
@@ -193,13 +221,13 @@ void main(void)
     sprite_x=128;
     sprite_y=120;
 
-    memcpy(levelData, allLevels[currentLevel +1], 30);
+    memcpy(levelData, allLevels[currentLevel], 30);
 
     ppu_on_all();//enable rendering
     updateAttrs();
     for (i=0; i <30; ++i)
     {
-        updateLineBricks(i);       
+        updateLineBricks(i);
         ppu_wait_frame();
     }
 
@@ -217,7 +245,7 @@ void main(void)
         pad = pad_poll(0);
 
         //Move bar when left or right is pressed
-        if(pad&PAD_LEFT && barX>= 1) 
+        if(pad&PAD_LEFT && barX>= 1)
         {
             barX -= 3;//Move bar 3px to the left
             if(ballStuck == TRUE)
@@ -225,7 +253,7 @@ void main(void)
                 ballX -= 48;//Move ball 3px to the left (or 48 unit) if it is still on the bar
             }
         }
-        if(pad&PAD_RIGHT && barX<=222) 
+        if(pad&PAD_RIGHT && barX<=222)
         {
             barX += 3;//Move bar 3px to the right
             if(ballStuck == TRUE)
@@ -333,7 +361,7 @@ void main(void)
                 yb1 = ya1>>4<<4;
                 yb2 = yb1+16;
             }
-            if(!tile) 
+            if(!tile)
             {
                 tile=checkCollisionAndRemoveBrick(xa2,ya1);//Collide with brick on ball's top right corner
                 if(tile)
@@ -344,7 +372,7 @@ void main(void)
                     yb2 = yb1+16;
                 }
             }
-            if(!tile) 
+            if(!tile)
             {
                 tile=checkCollisionAndRemoveBrick(xa1,ya2);//Collide with brick on ball's bottom left corner
                 if(tile)
@@ -355,7 +383,7 @@ void main(void)
                     yb2 = yb1+16;
                 }
             }
-            if(!tile) 
+            if(!tile)
             {
                 tile=checkCollisionAndRemoveBrick(xa2,ya2);//Collide with brick on ball's bottom right corner
                 if(tile)
@@ -392,9 +420,21 @@ void main(void)
                 {
                     ballDirection = getCollisionBallDirection(ballDirection, FALSE);
                 }
-                else 
+                else
                 {
                     //Problem
+                }
+                if(updateBrickCount())
+                {
+                    // reset all values when the level change
+                    barX = 114;
+                    barY = 200;
+                    ballStuck = TRUE;
+                    ballX = 126<<4;
+                    ballY = 193<<4;
+                    ballVelocity = 0;
+                    ballDirection = 0;
+                    continue; // skip move of the ball when the level change
                 }
             }
 
