@@ -409,7 +409,7 @@ void main(void)
             		case 1:
             		case 2:
             		case 3://Bottom right corner
-            			if(xa2 > xb2 && (ya2 < yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			if(xa2 > xb2 && (ya2 < yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the bottom)
             			{
             				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
             			}
@@ -445,7 +445,7 @@ void main(void)
             		case 13:
             		case 14:
             		case 15://Bottom left corner
-            			if(xa1 < xb1 && (ya2 < yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the top)
+            			if(xa1 < xb1 && (ya2 < yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick or more on the side than the bottom)
             			{
             				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
             			}
