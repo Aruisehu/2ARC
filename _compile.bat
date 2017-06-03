@@ -25,4 +25,4 @@ pause
 
 :exit
 
-@del %1.s
+@del %1.s utils.s
