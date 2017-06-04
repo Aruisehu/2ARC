@@ -87,6 +87,11 @@ static unsigned char bricksInLevel[] = {144, 137};
 
 static unsigned char destroyedBrickCount = 0;
 
+static unsigned char winBuffer[10+1]={
+    MSB(NTADR_A(12,12))|NT_UPD_HORZ,LSB(NTADR_A(12,12)),7,'Y'-0x20,'O'-0x20,'U'-0x20,' '-0x20,'W'-0x20,'I'-0x20,'N'-0x20,
+    NT_UPD_EOF
+};
+
 //calculate height of the level in pixels
 #define LEVEL_HEIGHT	(sizeof(levelData)/16*16)
 
@@ -143,7 +148,6 @@ void updateLineBricks(unsigned int line)
 }
 
 
-
 //get metatile code for given x,y level position in pixels, relative to current offset in the level
 //funciton like this could be used for collision detection purposes
 unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
@@ -174,21 +178,36 @@ unsigned char checkCollisionAndRemoveBrick(signed short x, signed short y)
 unsigned char updateBrickCount()
 {
     static int i;
+    static unsigned char levelBuffer[10+1]={
+    	MSB(NTADR_A(12,12))|NT_UPD_HORZ,LSB(NTADR_A(12,12)),7,'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'X'-0x20,
+    	NT_UPD_EOF
+    };
     destroyedBrickCount++;
     if(destroyedBrickCount == bricksInLevel[currentLevel])
     {
         currentLevel++;
-        // TODO display transition screen
-
-        delay(60);
-        memcpy(levelData, allLevels[currentLevel], 30);
-        updateAttrs();
-        for(i = 0; i < 30; ++i)
+        if(currentLevel < 2)
         {
-            updateLineBricks(i);
-            ppu_wait_frame();
+            levelBuffer[9] = (currentLevel + 1 + 0x10); // magic number to convert unsigned level int to AISI char
+            set_vram_update(levelBuffer);
+
+            delay(60);
+            memcpy(levelData, allLevels[currentLevel], 30);
+            updateAttrs();
+            for(i = 0; i < 30; ++i)
+            {
+                updateLineBricks(i);
+                ppu_wait_frame();
+            }
+            destroyedBrickCount = 0;
+
         }
-        destroyedBrickCount = 0;
+        else
+        {
+            set_vram_update(winBuffer);
+            delay(60);
+        }
+
         return TRUE;
     }
     return FALSE;
@@ -485,15 +504,15 @@ void main(void)
             //We move the ball according to its direction and velocity
             ballX += getXMotionFromDirection(ballDirection, ballVelocity);
             ballY += getYMotionFromDirection(ballDirection, ballVelocity);
+        }
+
+        /*
+           Drawing
+        */
+
+        spr = 0;
+
+        spr = oam_meta_spr(barX, barY, spr, barMetaSprite);//Draw the bar at its coordinates
+        spr = oam_spr((unsigned char)(ballX>>4), (unsigned char)(ballY>>4), BALL_SPR, 3, spr);//Draw the ball at its coordinates (converted from units to pixels)
     }
-
-    /*
-       Drawing
-       */
-
-    spr = 0;
-
-    spr = oam_meta_spr(barX, barY, spr, barMetaSprite);//Draw the bar at its coordinates
-    spr = oam_spr((unsigned char)(ballX>>4), (unsigned char)(ballY>>4), BALL_SPR, 3, spr);//Draw the ball at its coordinates (converted from units to pixels)
-}
 }
