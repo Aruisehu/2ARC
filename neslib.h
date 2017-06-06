@@ -162,7 +162,6 @@ void __fastcall__ split(unsigned int x,unsigned int y);
 
 //select current chr bank for sprites, 0..1
 
-void __fastcall__ bank_spr(unsigned char n);
 
 //select current chr bank for background, 0..1
 
@@ -259,22 +258,10 @@ void __fastcall__ delay(unsigned char frames);
 #define PAD_LEFT		0x40
 #define PAD_RIGHT		0x80
 
-#define OAM_FLIP_V		0x80
-#define OAM_FLIP_H		0x40
-#define OAM_BEHIND		0x20
-
 #define MAX(x1,x2)		((x1)<(x2)?(x2):(x1))
 #define MIN(x1,x2)		((x1)<(x2)?(x1):(x2))
 
-#define MASK_SPR		0x10
-#define MASK_BG			0x08
-#define MASK_EDGE_SPR	0x04
-#define MASK_EDGE_BG	0x02
-
 #define NAMETABLE_A		0x2000
-#define NAMETABLE_B		0x2400
-#define NAMETABLE_C		0x2800
-#define NAMETABLE_D		0x2c00
 
 #define NULL			0
 #define TRUE			1
@@ -287,11 +274,18 @@ void __fastcall__ delay(unsigned char frames);
 //macro to calculate nametable address from X,Y in compile time
 
 #define NTADR_A(x,y) 	(NAMETABLE_A|(((y)<<5)|(x)))
-#define NTADR_B(x,y) 	(NAMETABLE_B|(((y)<<5)|(x)))
-#define NTADR_C(x,y) 	(NAMETABLE_C|(((y)<<5)|(x)))
-#define NTADR_D(x,y) 	(NAMETABLE_D|(((y)<<5)|(x)))
 
 //macro to get MSB and LSB
 
 #define MSB(x)			(((x)>>8))
 #define LSB(x)			(((x)&0xff))
+
+//Ball sprite
+#define BALL_SPR 0x40
+
+//metatile palettes
+#define BGPAL0	0x00	//bin 00000000
+#define BGPAL1	0x55	//bin 01010101
+#define BGPAL2	0xaa	//bin 10101010
+#define BGPAL3	0xff	//bin 11111111
+

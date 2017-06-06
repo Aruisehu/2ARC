@@ -3,17 +3,7 @@
 //horizontal mirroring (gives 32x60 nametable layout) is used to hide the changing row
 //this example uses about 20% of CPU time
 
-#include "neslib.h"
 #include "utils.h"
-
-//Ball sprite
-#define BALL_SPR 0x40
-
-//metatile palettes
-#define BGPAL0	0x00	//bin 00000000
-#define BGPAL1	0x55	//bin 01010101
-#define BGPAL2	0xaa	//bin 10101010
-#define BGPAL3	0xff	//bin 11111111
 
 
 //palette data
@@ -28,24 +18,6 @@ const unsigned char barMetaSprite[]={
     16,	0,	0xF1,	1,
     24,	0,	0xF2,	1,
     128
-};
-
-//metatile definitions, one metatile by another, 4 bytes per metatile
-const unsigned char metatiles[]={
-    0x00,0x00,0x00,0x00,
-    0x80,0x81,0x90,0x91,
-    0x82,0x83,0x92,0x93,
-    0x84,0x85,0x94,0x95,
-    0x86,0x87,0x96,0x97
-};
-
-//metatile attributes, define which palette should be used for a metatile
-const unsigned char metaattrs[]={
-    BGPAL0,
-    BGPAL0,
-    BGPAL1,
-    BGPAL2,
-    BGPAL3
 };
 
 static unsigned char emptyLevelData[] =
@@ -109,9 +81,6 @@ static unsigned char looseBuffer[12+1]={
     NT_UPD_EOF
 };
 
-//calculate height of the level in pixels
-#define LEVEL_HEIGHT	(sizeof(levelData)/16*16)
-
 void updateAttrs()
 {
     //set color for background
@@ -136,7 +105,7 @@ void updateAttrs()
 
 void setTextAttrs()
 {
-	static unsigned char attrBuffer[68];
+    static unsigned char attrBuffer[68];
     static unsigned char l, k;
 
     attrBuffer[0] = 0x23|NT_UPD_HORZ;
@@ -144,10 +113,10 @@ void setTextAttrs()
     attrBuffer[2] = 64;
     for(l=0; l<16; ++l)
     {
-    	for(k=3; k<7; ++k)
-    	{
-    		attrBuffer[l*4 + k] = BGPAL0;
-    	}
+        for(k=3; k<7; ++k)
+        {
+            attrBuffer[l*4 + k] = BGPAL0;
+        }
     }
     attrBuffer[67] = NT_UPD_EOF;
     set_vram_update(attrBuffer);
@@ -160,8 +129,8 @@ void updateLineBricks(unsigned int line)
     static unsigned char vramBuffer[36];
     static unsigned char l;
     static unsigned char maskPpu;
-    vramBuffer[0] = MSB(NAMETABLE_A + (line *32))|NT_UPD_HORZ; //When tile is filled, fill the one at its right
-    vramBuffer[1] = LSB(NAMETABLE_A + (line *32));
+    vramBuffer[0] = MSB(NAMETABLE_A + (line<<5))|NT_UPD_HORZ; //When tile is filled, fill the one at its right
+    vramBuffer[1] = LSB(NAMETABLE_A + (line<<5));
     vramBuffer[2] = 32; //Data length
     for (l=0;l<8;++l)
     {
@@ -218,8 +187,8 @@ unsigned char updateBrickCount()
 {
     static int i;
     static unsigned char levelBuffer[10+1]={
-    	MSB(NTADR_A(12,12))|NT_UPD_HORZ,LSB(NTADR_A(12,12)),7,'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'X'-0x20,
-    	NT_UPD_EOF
+        MSB(NTADR_A(12,12))|NT_UPD_HORZ,LSB(NTADR_A(12,12)),7,'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'X'-0x20,
+        NT_UPD_EOF
     };
     destroyedBrickCount++;
     if(destroyedBrickCount == bricksInLevel[currentLevel])
@@ -227,7 +196,7 @@ unsigned char updateBrickCount()
         currentLevel++;
         if(currentLevel < 2)
         {
-        	setTextAttrs();//Set text attributes
+            setTextAttrs();//Set text attributes
             levelBuffer[9] = (currentLevel + 1 + 0x10); // magic number to convert unsigned level int to AISI char
             set_vram_update(levelBuffer);
 
@@ -244,7 +213,7 @@ unsigned char updateBrickCount()
         }
         else
         {
-        	setTextAttrs();//Set text attributes
+            setTextAttrs();//Set text attributes
             set_vram_update(winBuffer);
             delay(60);
             updateAttrs();
@@ -257,14 +226,14 @@ unsigned char updateBrickCount()
 
 void userLost()
 {
-	static int i;
+    static int i;
     static unsigned char levelBuffer[12+1]={
-    	MSB(NTADR_A(11,12))|NT_UPD_HORZ,LSB(NTADR_A(11,12)),9,' '-0x20, 'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'1'-0x20, ' '-0x20,//Space at the begining and the end to fully erase game over
-    	NT_UPD_EOF
+        MSB(NTADR_A(11,12))|NT_UPD_HORZ,LSB(NTADR_A(11,12)),9,' '-0x20, 'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'1'-0x20, ' '-0x20,//Space at the begining and the end to fully erase game over
+        NT_UPD_EOF
     };
 
     //Clear screen of remaining bricks
-	memcpy(levelData, emptyLevelData, 30);
+    memcpy(levelData, emptyLevelData, 30);
     for(i = 0; i < 30; ++i)
     {
         updateLineBricks(i);
@@ -275,10 +244,10 @@ void userLost()
     set_vram_update(looseBuffer);//Show game over
 
     delay(400);
-	set_vram_update(levelBuffer);//Show level 1
-	delay(100);
+    set_vram_update(levelBuffer);//Show level 1
+    delay(100);
 
-	//Reset vars
+    //Reset vars
     currentLevel = 0;
     destroyedBrickCount = 0;
 
@@ -398,7 +367,7 @@ void main(void)
             {
                 // reset all values when we loose
 
-            	userLost();
+                userLost();
 
                 barX = 114;
                 barY = 200;
@@ -512,75 +481,75 @@ void main(void)
                 else
                 {
                     switch(ballDirection)
-                	{
-                		case 0:
-                		case 8:
-                			ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                			break;
-                		case 4:
-                		case 12://Should not happend
-                			ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                			break;
-                		case 1:
-                		case 2:
-                		case 3://Bottom right corner
-                			if(xa2 > xb2 && (ya2 <= yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                				ballX = xb2<<4;
-                			}
-                			else//Bottom side
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                				ballY = yb2<<4;
-                			}
-                			break;
-                		case 5:
-                		case 6:
-                		case 7://Top right corner
-                			if(xa2 > xb2 && (ya1 >= yb1 || ABS(xa1-xb2) < ABS(ya2-yb1)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                				ballX = xb2<<4;
-                			}
-                			else//Top side
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                				ballY = (yb1-8)<<4;
-                			}
-                			break;
-                		case 9:
-                		case 10:
-                		case 11://Top left corner
-                			if(xa1 < xb1 &&(ya1 >= yb1 || ABS(xa2-xb1) < ABS(ya2-yb1)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                				ballX = (xb1-8)<<4;
-                			}
-                			else//Top side
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                				ballY = (yb1-8)<<4;
-                			}
-                			break;
-                		case 13:
-                		case 14:
-                		case 15://Bottom left corner
-                			if(xa1 < xb1 && (ya2 <= yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-                				ballX = (xb1-8)<<4;
-                			}
-                			else//Bottom side
-                			{
-                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-                				ballY = yb2<<4;
-                			}
-                			break;
-                		default:
-                			//The fuck? this is not possible
-                			break;
-                	}
+                    {
+                        case 0:
+                        case 8:
+                            ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                            break;
+                        case 4:
+                        case 12://Should not happend
+                            ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                            break;
+                        case 1:
+                        case 2:
+                        case 3://Bottom right corner
+                            if(xa2 > xb2 && (ya2 <= yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                                ballX = xb2<<4;
+                            }
+                            else//Bottom side
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                                ballY = yb2<<4;
+                            }
+                            break;
+                        case 5:
+                        case 6:
+                        case 7://Top right corner
+                            if(xa2 > xb2 && (ya1 >= yb1 || ABS(xa1-xb2) < ABS(ya2-yb1)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                                ballX = xb2<<4;
+                            }
+                            else//Top side
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                                ballY = (yb1-8)<<4;
+                            }
+                            break;
+                        case 9:
+                        case 10:
+                        case 11://Top left corner
+                            if(xa1 < xb1 &&(ya1 >= yb1 || ABS(xa2-xb1) < ABS(ya2-yb1)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                                ballX = (xb1-8)<<4;
+                            }
+                            else//Top side
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                                ballY = (yb1-8)<<4;
+                            }
+                            break;
+                        case 13:
+                        case 14:
+                        case 15://Bottom left corner
+                            if(xa1 < xb1 && (ya2 <= yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                                ballX = (xb1-8)<<4;
+                            }
+                            else//Bottom side
+                            {
+                                ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                                ballY = yb2<<4;
+                            }
+                            break;
+                        default:
+                            //The fuck? this is not possible
+                            break;
+                    }
                     if(updateBrickCount())
                     {
                         // reset all values when the level change
@@ -603,10 +572,9 @@ void main(void)
             ballX += getXMotionFromDirection(ballDirection, ballVelocity);
             ballY += getYMotionFromDirection(ballDirection, ballVelocity);
         }
-
         /*
            Drawing
-        */
+           */
         spr = 0;
 
         spr = oam_meta_spr(barX, barY, spr, barMetaSprite);//Draw the bar at its coordinates
