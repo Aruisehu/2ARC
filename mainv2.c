@@ -172,8 +172,8 @@ void updateLineBricks(unsigned int line)
             vramBuffer[l*4 +4]= 0xd1;
             vramBuffer[l*4 +5]= 0xd1;
             vramBuffer[l*4 +6]= 0xd2;
-        } 
-        else 
+        }
+        else
         {
             vramBuffer[l*4 +3]= 0x00;
             vramBuffer[l*4 +4]= 0x00;
@@ -270,7 +270,7 @@ void userLost()
         updateLineBricks(i);
         ppu_wait_frame();
     }
-    
+
     setTextAttrs();//Set attribute for text
     set_vram_update(looseBuffer);//Show game over
 
@@ -311,6 +311,7 @@ void main(void)
     static signed short nbx, nby;//Future ball's position to determinate collision
     static signed short barBallPos;//Position of the ball on the bar
     static unsigned short xb1, xb2, yb1, yb2, xa1, xa2, ya1, ya2;
+    static unsigned char superBallCount = 0;
 
     pal_spr(palette);//set sprite palette
     pal_bg(palette);//set background palette from an array
@@ -504,91 +505,99 @@ void main(void)
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
             {
-            	switch(ballDirection)
-            	{
-            		case 0:
-            		case 8:
-            			ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            			break;
-            		case 4:
-            		case 12://Should not happend
-            			ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            			break;
-            		case 1:
-            		case 2:
-            		case 3://Bottom right corner
-            			if(xa2 > xb2 && (ya2 <= yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            				ballX = xb2<<4;
-            			}
-            			else//Bottom side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            				ballY = yb2<<4;
-            			}
-            			break;
-            		case 5:
-            		case 6:
-            		case 7://Top right corner
-            			if(xa2 > xb2 && (ya1 >= yb1 || ABS(xa1-xb2) < ABS(ya2-yb1)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            				ballX = xb2<<4;
-            			}
-            			else//Top side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            				ballY = (yb1-8)<<4;
-            			}
-            			break;
-            		case 9:
-            		case 10:
-            		case 11://Top left corner
-            			if(xa1 < xb1 &&(ya1 >= yb1 || ABS(xa2-xb1) < ABS(ya2-yb1)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            				ballX = (xb1-8)<<4;
-            			}
-            			else//Top side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            				ballY = (yb1-8)<<4;
-            			}
-            			break;
-            		case 13:
-            		case 14:
-            		case 15://Bottom left corner
-            			if(xa1 < xb1 && (ya2 <= yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
-            				ballX = (xb1-8)<<4;
-            			}
-            			else//Bottom side
-            			{
-            				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
-            				ballY = yb2<<4;
-            			}
-            			break;
-            		default:
-            			//The fuck? this is not possible
-            			break;
-            	}
-                if(updateBrickCount())
+                if(superBallCount > 0)
                 {
-                    // reset all values when the level change
-                    barX = 114;
-                    barY = 200;
-                    ballStuck = TRUE;
-                    ballX = 126<<4;
-                    ballY = 193<<4;
-                    ballVelocity = 0;
-                    ballDirection = 0;
-                    continue; // skip move of the ball when the level change
+                    superBallCount--;
+                }
+                else
+                {
+                    switch(ballDirection)
+                	{
+                		case 0:
+                		case 8:
+                			ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                			break;
+                		case 4:
+                		case 12://Should not happend
+                			ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                			break;
+                		case 1:
+                		case 2:
+                		case 3://Bottom right corner
+                			if(xa2 > xb2 && (ya2 <= yb2 || ABS(xa1-xb2) < ABS(ya1-yb2)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                				ballX = xb2<<4;
+                			}
+                			else//Bottom side
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                				ballY = yb2<<4;
+                			}
+                			break;
+                		case 5:
+                		case 6:
+                		case 7://Top right corner
+                			if(xa2 > xb2 && (ya1 >= yb1 || ABS(xa1-xb2) < ABS(ya2-yb1)))//Right side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                				ballX = xb2<<4;
+                			}
+                			else//Top side
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                				ballY = (yb1-8)<<4;
+                			}
+                			break;
+                		case 9:
+                		case 10:
+                		case 11://Top left corner
+                			if(xa1 < xb1 &&(ya1 >= yb1 || ABS(xa2-xb1) < ABS(ya2-yb1)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the top)
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                				ballX = (xb1-8)<<4;
+                			}
+                			else//Top side
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                				ballY = (yb1-8)<<4;
+                			}
+                			break;
+                		case 13:
+                		case 14:
+                		case 15://Bottom left corner
+                			if(xa1 < xb1 && (ya2 <= yb2 || ABS(xa2-xb1) < ABS(ya1-yb2)))//Left side; condition: (not totally over the brick && totally on the side of the brick || more on the side than the bottom)
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, FALSE);
+                				ballX = (xb1-8)<<4;
+                			}
+                			else//Bottom side
+                			{
+                				ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                				ballY = yb2<<4;
+                			}
+                			break;
+                		default:
+                			//The fuck? this is not possible
+                			break;
+                	}
+                    if(updateBrickCount())
+                    {
+                        // reset all values when the level change
+                        barX = 114;
+                        barY = 200;
+                        ballStuck = TRUE;
+                        ballX = 126<<4;
+                        ballY = 193<<4;
+                        ballVelocity = 0;
+                        ballDirection = 0;
+                    }
+                    if(rand8() == 0) // one of 128 time
+                    {
+                        superBallCount = 24; // enable superball for 64 block destruction (superball don't change his direction when hiting block)
+                    }
                 }
             }
-
-            //}
 
             //We move the ball according to its direction and velocity
             ballX += getXMotionFromDirection(ballDirection, ballVelocity);
@@ -598,10 +607,9 @@ void main(void)
         /*
            Drawing
         */
-
         spr = 0;
 
         spr = oam_meta_spr(barX, barY, spr, barMetaSprite);//Draw the bar at its coordinates
-        spr = oam_spr((unsigned char)(ballX>>4), (unsigned char)(ballY>>4), BALL_SPR, 3, spr);//Draw the ball at its coordinates (converted from units to pixels)
+        spr = oam_spr((unsigned char)(ballX>>4), (unsigned char)(ballY>>4), BALL_SPR, (superBallCount > 0 ? 0 : 3), spr);//Draw the ball at its coordinates (converted from units to pixels)
     }
 }
