@@ -48,6 +48,18 @@ const unsigned char metaattrs[]={
     BGPAL3
 };
 
+static unsigned char emptyLevelData[] =
+{
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
 static unsigned char firstLevelData[] =
 {
     0x00, 0x00, 0xFF, 0xFF,
@@ -57,7 +69,7 @@ static unsigned char firstLevelData[] =
     0xFF, 0xFF, 0xFF, 0xFF,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00,
+    0x00, 0x00
 };
 
 static unsigned char secondLevelData[] =
@@ -69,7 +81,7 @@ static unsigned char secondLevelData[] =
     0xFF, 0xFF, 0xFF, 0xFF,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00,
+    0x00, 0x00
 };
 
 static unsigned char* allLevels[] =
@@ -89,6 +101,11 @@ static unsigned char destroyedBrickCount = 0;
 
 static unsigned char winBuffer[10+1]={
     MSB(NTADR_A(12,12))|NT_UPD_HORZ,LSB(NTADR_A(12,12)),7,'Y'-0x20,'O'-0x20,'U'-0x20,' '-0x20,'W'-0x20,'I'-0x20,'N'-0x20,
+    NT_UPD_EOF
+};
+
+static unsigned char looseBuffer[12+1]={
+    MSB(NTADR_A(11,12))|NT_UPD_HORZ,LSB(NTADR_A(11,12)),9,'G'-0x20,'A'-0x20,'M'-0x20,'E'-0x20,' '-0x20,'O'-0x20,'V'-0x20, 'E'-0x20, 'R'-0x20,
     NT_UPD_EOF
 };
 
@@ -117,6 +134,26 @@ void updateAttrs()
     ppu_wait_frame();
 }
 
+void setTextAttrs()
+{
+	static unsigned char attrBuffer[68];
+    static unsigned char l, k;
+
+    attrBuffer[0] = 0x23|NT_UPD_HORZ;
+    attrBuffer[1] = 0xC0;
+    attrBuffer[2] = 64;
+    for(l=0; l<16; ++l)
+    {
+    	for(k=3; k<7; ++k)
+    	{
+    		attrBuffer[l*4 + k] = BGPAL0;
+    	}
+    }
+    attrBuffer[67] = NT_UPD_EOF;
+    set_vram_update(attrBuffer);
+    ppu_wait_frame();
+}
+
 void updateLineBricks(unsigned int line)
 {
     //line is a number comprise beetween 0 and 30
@@ -135,7 +172,9 @@ void updateLineBricks(unsigned int line)
             vramBuffer[l*4 +4]= 0xd1;
             vramBuffer[l*4 +5]= 0xd1;
             vramBuffer[l*4 +6]= 0xd2;
-        } else {
+        } 
+        else 
+        {
             vramBuffer[l*4 +3]= 0x00;
             vramBuffer[l*4 +4]= 0x00;
             vramBuffer[l*4 +5]= 0x00;
@@ -188,6 +227,7 @@ unsigned char updateBrickCount()
         currentLevel++;
         if(currentLevel < 2)
         {
+        	setTextAttrs();//Set text attributes
             levelBuffer[9] = (currentLevel + 1 + 0x10); // magic number to convert unsigned level int to AISI char
             set_vram_update(levelBuffer);
 
@@ -204,13 +244,52 @@ unsigned char updateBrickCount()
         }
         else
         {
+        	setTextAttrs();//Set text attributes
             set_vram_update(winBuffer);
             delay(60);
+            updateAttrs();
         }
 
         return TRUE;
     }
     return FALSE;
+}
+
+void userLost()
+{
+	static int i;
+    static unsigned char levelBuffer[12+1]={
+    	MSB(NTADR_A(11,12))|NT_UPD_HORZ,LSB(NTADR_A(11,12)),9,' '-0x20, 'L'-0x20,'E'-0x20,'V'-0x20,'E'-0x20,'L'-0x20,' '-0x20,'1'-0x20, ' '-0x20,//Space at the begining and the end to fully erase game over
+    	NT_UPD_EOF
+    };
+
+    //Clear screen of remaining bricks
+	memcpy(levelData, emptyLevelData, 30);
+    for(i = 0; i < 30; ++i)
+    {
+        updateLineBricks(i);
+        ppu_wait_frame();
+    }
+    
+    setTextAttrs();//Set attribute for text
+    set_vram_update(looseBuffer);//Show game over
+
+    delay(400);
+	set_vram_update(levelBuffer);//Show level 1
+	delay(100);
+
+	//Reset vars
+    currentLevel = 0;
+    destroyedBrickCount = 0;
+
+    //Load level 1
+    memcpy(levelData, allLevels[currentLevel], 30);
+    updateAttrs();
+    for(i = 0; i < 30; ++i)
+    {
+        updateLineBricks(i);
+        ppu_wait_frame();
+    }
 }
 
 
@@ -316,8 +395,18 @@ void main(void)
             }
             else if(ballY > 3680)//Bottom (230*16)
             {
-                ballY = 3680;
-                ballDirection = getCollisionBallDirection(ballDirection, TRUE);
+                // reset all values when we loose
+
+            	userLost();
+
+                barX = 114;
+                barY = 200;
+                ballStuck = TRUE;
+                ballX = 126<<4;
+                ballY = 193<<4;
+                ballVelocity = 0;
+                ballDirection = 0;
+                continue; // skip move of the ball when the level change
             }
             if(ballX < 0)//Left
             {
