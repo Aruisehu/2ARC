@@ -594,7 +594,7 @@ void main(void)
                     }
                     if(rand8() == 0) // one of 128 time
                     {
-                        superBallCount = 24; // enable superball for 64 block destruction (superball don't change his direction when hiting block)
+                        superBallCount = (rand8() / 16) + 8; // enable superball for 8 to 24 block destruction (superball don't change his direction when hiting block)
                     }
                 }
             }
