@@ -34,14 +34,34 @@
             <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
         </taskproperties>
         <task id="0" name="création de la barre" color="#8cb6ce" meeting="false" start="2017-04-03" duration="7" complete="0" expand="true"/>
-        <task id="4" name="création balle" color="#8cb6ce" meeting="false" start="2017-04-12" duration="7" complete="0" expand="true"/>
-        <task id="6" name="création des blocs" color="#8cb6ce" meeting="false" start="2017-04-21" duration="7" complete="0" expand="true"/>
-        <task id="10" name="gestion des collisions" color="#8cb6ce" meeting="false" start="2017-05-02" duration="14" complete="0" expand="true"/>
-        <task id="11" name="gestion niveau" color="#8cb6ce" meeting="false" start="2017-05-22" duration="4" complete="0" expand="true"/>
-        <task id="13" name="victoire et défaite" color="#8cb6ce" meeting="false" start="2017-05-26" duration="3" complete="0" expand="true"/>
+        <task id="4" name="création balle" color="#8cb6ce" meeting="false" start="2017-04-03" duration="7" complete="0" expand="true"/>
+        <task id="6" name="création des blocs" color="#8cb6ce" meeting="false" start="2017-04-03" duration="7" complete="0" expand="true"/>
+        <task id="10" name="gestion des collisions" color="#8cb6ce" meeting="false" start="2017-04-12" duration="14" complete="0" expand="true"/>
+        <task id="33" name="création niveau" color="#8cb6ce" meeting="false" start="2017-05-02" duration="10" complete="0" expand="true"/>
+        <task id="11" name="gestion niveau" color="#8cb6ce" meeting="false" start="2017-05-16" duration="5" complete="0" expand="true"/>
+        <task id="13" name="victoire et défaite" color="#8cb6ce" meeting="false" start="2017-05-23" duration="5" complete="0" expand="true"/>
+        <task id="34" name="bonus super balle" color="#8cb6ce" meeting="false" start="2017-05-30" duration="7" complete="0" expand="true"/>
     </tasks>
-    <resources/>
-    <allocations/>
+    <resources>
+        <resource id="0" name="Yohann JOLAIN" function="Default:1" contacts="213090@supinfo.com" phone=""/>
+        <resource id="1" name="Lisa JAAFAR" function="Default:0" contacts="213841@supinfo.com" phone=""/>
+        <resource id="2" name="Sébastien ERFANI" function="Default:0" contacts="213969@supinfo.com" phone=""/>
+        <resource id="3" name="Kévin BAUMEYER" function="Default:0" contacts="214411@supinfo.com" phone=""/>
+        <resource id="4" name="Robin BIECHY" function="Default:0" contacts="214666@supinfo.com" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="4" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="10" resource-id="0" function="Default:1" responsible="false" load="100.0"/>
+        <allocation task-id="33" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="6" resource-id="2" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="0" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="10" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="13" resource-id="3" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="34" resource-id="3" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="11" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="13" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="34" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+    </allocations>
     <vacations/>
     <previous/>
     <roles roleset-name="Default"/>
