@@ -1,8 +1,3 @@
-//this example shows non-looped vertical scroll, with 2x2 metatiles and attributes
-//it is close enough to one that would be needed in an actual game
-//horizontal mirroring (gives 32x60 nametable layout) is used to hide the changing row
-//this example uses about 20% of CPU time
-
 #include "utils.h"
 
 
