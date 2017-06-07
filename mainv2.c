@@ -15,6 +15,12 @@ const unsigned char barMetaSprite[]={
     128
 };
 
+
+// Level data
+// Each byte in level Data represents one row.
+// each bit in that byte determine if there is or not a brick in this position
+// ex: 0111 0101 (0x75) means there's no brick in first position, there's one in 2,3,4 position, etc...
+// one brick is 32 pixel wide
 static unsigned char emptyLevelData[] =
 {
     0x00, 0x00, 0x00, 0x00,
@@ -29,17 +35,77 @@ static unsigned char emptyLevelData[] =
 
 static unsigned char firstLevelData[] =
 {
-    0x00, 0x00, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x3C, 0x7E, 0xFF,
+    0xFF, 0x7E, 0x3C, 0x00,
+    0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00
 };
 
 static unsigned char secondLevelData[] =
+{
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0x7E, 0x3C, 0x18,
+    0x3C, 0x7E, 0xFF, 0x7E,
+    0x3C, 0x7E, 0xFF, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
+static unsigned char thirdLevelData[] =
+{
+    0x00, 0x00, 0xAA, 0x55,
+    0xAA, 0x55, 0xAA, 0x55,
+    0xAA, 0x55, 0xAA, 0x55,
+    0xAA, 0x55, 0xAA, 0x55,
+    0xAA, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
+static unsigned char fourthLevelData[] =
+{
+    0x00, 0x00, 0xFE, 0xDC,
+    0xBA, 0x98, 0x76, 0x54,
+    0x32, 0x10, 0x01, 0x23,
+    0x45, 0x67, 0x78, 0xAB,
+    0xCD, 0xEF, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
+static unsigned char fifthLevelData[] =
+{
+    0x00, 0x00, 0x92, 0xC9,
+    0xE4, 0xF2, 0xE4, 0xC9,
+    0x92, 0x00, 0x00, 0x49,
+    0x93, 0x27, 0x4F, 0x27,
+    0x93, 0x49, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
+static unsigned char sixthLevelData[] =
+{
+    0x00, 0x00, 0xDD, 0xAF,
+    0xE0, 0x6D, 0x19, 0x21,
+    0xB5, 0x93, 0x9F, 0x04,
+    0x3C, 0x73, 0x17, 0x60,
+    0x62, 0xF7, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00
+};
+
+static unsigned char lastLevelData[] =
 {
     0x00, 0x00, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,
@@ -53,16 +119,13 @@ static unsigned char secondLevelData[] =
 
 static unsigned char* allLevels[] =
 {
-    firstLevelData, secondLevelData
+    firstLevelData, secondLevelData, thirdLevelData, fourthLevelData, fifthLevelData, sixthLevelData, lastLevelData
 };
-//Each byte in level Data represents one row.
-//each bit in that byte determine if there is or not a brick in this position
-//ex: 0111 0101 (0x75) means there's no brick in first position, there's one in 2,3,4 position, etc...
-//one brick is 32 pixel wide
+
 static unsigned char levelData[30];
 
-// number of brick in all level. Used to
-static unsigned char bricksInLevel[] = {144, 137};
+// Number of brick in all level. Used to check if current level is finished, avoiding to loop in the current level data.
+static unsigned char bricksInLevel[] = {36, 62, 60, 64, 54, 66, 137};
 
 static unsigned char destroyedBrickCount = 0;
 
@@ -189,7 +252,7 @@ unsigned char updateBrickCount()
     if(destroyedBrickCount == bricksInLevel[currentLevel])
     {
         currentLevel++;
-        if(currentLevel < 2)
+        if(currentLevel < 7)
         {
             setTextAttrs();//Set text attributes
             levelBuffer[9] = (currentLevel + 1 + 0x10); // magic number to convert unsigned level int to AISI char
@@ -473,11 +536,24 @@ void main(void)
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
             {
-                if(rand8() > 230 && sballBonus == FALSE && superBallCount == 0)
+                if(rand8() > 240 && sballBonus == FALSE && superBallCount == 0)
                 {
                     sballBonus = TRUE;
                     sballX = xb1+((xb2-xb1)>>1)-4;
                     sballY = yb1+((yb2-yb1)>>1)-4;
+                }
+                if(updateBrickCount())
+                {
+                    // reset all values when the level change
+                    barX = 114;
+                    barY = 200;
+                    ballStuck = TRUE;
+                    ballX = 126<<4;
+                    ballY = 193<<4;
+                    ballVelocity = 0;
+                    ballDirection = 0;
+                    sballBonus = FALSE;
+                    superBallCount = 0;
                 }
                 if(superBallCount > 0)
                 {
@@ -554,19 +630,6 @@ void main(void)
                         default:
                             //The fuck? this is not possible
                             break;
-                    }
-                    if(updateBrickCount())
-                    {
-                        // reset all values when the level change
-                        barX = 114;
-                        barY = 200;
-                        ballStuck = TRUE;
-                        ballX = 126<<4;
-                        ballY = 193<<4;
-                        ballVelocity = 0;
-                        ballDirection = 0;
-                        sballBonus = FALSE;
-                        superBallCount = 0;
                     }
                 }
             }
