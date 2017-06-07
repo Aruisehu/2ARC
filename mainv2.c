@@ -7,7 +7,7 @@
 
 
 //palette data
-const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c };
+const unsigned char palette[16]={ 0x0f,0x16,0x26,0x36,0x0f,0x18,0x28,0x38,0x0f,0x19,0x29,0x39,0x0f,0x1c,0x2c,0x3c};
 const unsigned char maskPpuBase = 0x80;
 static unsigned char currentLevel = 0;
 
@@ -281,6 +281,9 @@ void main(void)
     static signed short barBallPos;//Position of the ball on the bar
     static unsigned short xb1, xb2, yb1, yb2, xa1, xa2, ya1, ya2;
     static unsigned char superBallCount = 0;
+    static unsigned char sballBonus = FALSE;//Super ball bonus is active
+    static unsigned char sballX, sballY;//Super ball bonus pos
+    static unsigned char sbb_sprite = TRUE;//Super ball bonus sprite
 
     pal_spr(palette);//set sprite palette
     pal_bg(palette);//set background palette from an array
@@ -353,8 +356,7 @@ void main(void)
 
         /*
            Ball movement & collisions
-           */
-
+        */
         if(ballStuck == FALSE)
         {
             //Border collisions
@@ -376,6 +378,8 @@ void main(void)
                 ballY = 193<<4;
                 ballVelocity = 0;
                 ballDirection = 0;
+                sballBonus = FALSE;
+                superBallCount = 0;
                 continue; // skip move of the ball when the level change
             }
             if(ballX < 0)//Left
@@ -474,9 +478,15 @@ void main(void)
             }
             if(tile)//If we collide with any brick we look where the ball is and bounce accordingly
             {
+                if(rand8() > 230 && sballBonus == FALSE && superBallCount == 0)
+                {
+                    sballBonus = TRUE;
+                    sballX = xb1+((xb2-xb1)>>1)-4;
+                    sballY = yb1+((yb2-yb1)>>1)-4;
+                }
                 if(superBallCount > 0)
                 {
-                    superBallCount--;
+                    superBallCount = superBallCount - 1;
                 }
                 else
                 {
@@ -560,10 +570,8 @@ void main(void)
                         ballY = 193<<4;
                         ballVelocity = 0;
                         ballDirection = 0;
-                    }
-                    if(rand8() == 0) // one of 128 time
-                    {
-                        superBallCount = (rand8() / 16) + 8; // enable superball for 8 to 24 block destruction (superball don't change his direction when hiting block)
+                        sballBonus = FALSE;
+                        superBallCount = 0;
                     }
                 }
             }
@@ -572,6 +580,32 @@ void main(void)
             ballX += getXMotionFromDirection(ballDirection, ballVelocity);
             ballY += getYMotionFromDirection(ballDirection, ballVelocity);
         }
+
+        if(sballBonus == TRUE)
+        {
+            sballY += 1;
+            if(sballY% 4 == 0)
+            {
+                sbb_sprite = (sbb_sprite + 1) % 2;
+            }
+            if(sballY > 250)
+            {
+                sballBonus = FALSE;
+                sballX = -8;
+            }
+            if(sballY > 200 && sballY < 208)
+            {
+                if(sballX+8 > barX && sballX < barX+32)
+                {
+                    sballBonus = FALSE;
+                    sballX = 0;
+                    sballY = -8;
+                    // enable superball for 8 to 24 block destruction (superball don't change its direction when hiting block)
+                    superBallCount = rand8()%16 + 8;
+                }
+            }
+        }
+
         /*
            Drawing
            */
@@ -579,5 +613,6 @@ void main(void)
 
         spr = oam_meta_spr(barX, barY, spr, barMetaSprite);//Draw the bar at its coordinates
         spr = oam_spr((unsigned char)(ballX>>4), (unsigned char)(ballY>>4), BALL_SPR, (superBallCount > 0 ? 0 : 3), spr);//Draw the ball at its coordinates (converted from units to pixels)
+        spr = oam_spr(sballX, sballY, sbb_sprite == 0 ? SBALL_B_SPR : SBALL_B_SPR_2, 1, spr);
     }
 }

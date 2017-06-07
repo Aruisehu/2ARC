@@ -283,6 +283,10 @@ void __fastcall__ delay(unsigned char frames);
 //Ball sprite
 #define BALL_SPR 0x40
 
+//Super ball bonus sprites
+#define SBALL_B_SPR 0xFE
+#define SBALL_B_SPR_2 0xFF
+
 //metatile palettes
 #define BGPAL0	0x00	//bin 00000000
 #define BGPAL1	0x55	//bin 01010101
