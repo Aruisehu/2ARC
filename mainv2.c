@@ -125,7 +125,7 @@ static unsigned char* allLevels[] =
 static unsigned char levelData[30];
 
 // Number of brick in all level. Used to check if current level is finished, avoiding to loop in the current level data.
-static unsigned char bricksInLevel[] = {36, 62, 60, 64, 54, 66, 137};
+static unsigned char bricksInLevel[] = {36, 62, 60, 65, 54, 66, 137};
 
 static unsigned char destroyedBrickCount = 0;
 
